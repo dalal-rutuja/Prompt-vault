@@ -415,7 +415,7 @@ const ChatHistoryPage = () => {
   const [hasMore, setHasMore] = useState(true);
 
   const navigate = useNavigate();
-  const API_BASE_URL = "http://localhost:5000";
+  const API_BASE_URL = "https://backend-110685455967.asia-south1.run.app";
 
   const getAuthToken = () => {
     const keys = ["authToken", "token", "accessToken", "jwt", "bearerToken"];

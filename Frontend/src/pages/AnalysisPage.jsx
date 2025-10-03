@@ -1455,7 +1455,7 @@ const AnalysisPage = () => {
   const dropdownRef = useRef(null);
   const streamingIntervalRef = useRef(null);
 
-  const API_BASE_URL = "http://localhost:5000";
+  const API_BASE_URL = "https://backend-110685455967.asia-south1.run.app";
 
   const llmModels = [
     { id: "gemini", name: "Gemini 2.0 Flash" },

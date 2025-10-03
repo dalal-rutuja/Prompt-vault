@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000', // Adjust if your backend runs on a different port
+  baseURL: 'https://backend-110685455967.asia-south1.run.app', // Adjust if your backend runs on a different port
   withCredentials: true,
 });
 

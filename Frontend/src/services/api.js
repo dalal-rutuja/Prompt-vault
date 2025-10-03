@@ -1,5 +1,5 @@
 // // src/services/api.js
-// const API_BASE_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000/api';
+// const API_BASE_URL = import.meta.env.VITE_APP_API_URL || 'https://backend-110685455967.asia-south1.run.app/api';
 
 // class ApiService {
 //   constructor() {
@@ -56,7 +56,7 @@
 //   // ✅ Auth APIs (Optional)
 //   // ========================
 //   async login(credentials) {
-//     const response = await this.request('http://localhost:5000/auth/api/auth/login', {
+//     const response = await this.request('https://backend-110685455967.asia-south1.run.app/auth/api/auth/login', {
 //       method: 'POST',
 //       body: JSON.stringify(credentials),
 //        credentials: "include",
@@ -310,7 +310,7 @@
 
 // src/services/api.js
 const API_BASE_URL =
-  import.meta.env.VITE_APP_API_URL || "http://localhost:5000";
+  import.meta.env.VITE_APP_API_URL || "https://backend-110685455967.asia-south1.run.app";
 
 class ApiService {
   constructor() {
@@ -471,7 +471,7 @@ class ApiService {
   }
 
   async getDraftingTemplates() {
-    return this.request("http://localhost:5000/drafting");
+    return this.request("https://backend-110685455967.asia-south1.run.app/drafting");
   }
 
   // ========================
@@ -696,7 +696,7 @@ async continueFileChat(fileId, question, sessionId) {
   // ✅ Support APIs
   // ========================
   async submitSupportQuery(queryData) {
-    return this.request("http://localhost:5000/support", {
+    return this.request("https://backend-110685455967.asia-south1.run.app/support", {
       method: "POST",
       body: JSON.stringify(queryData),
     });

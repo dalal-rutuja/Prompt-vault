@@ -2405,7 +2405,7 @@ import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const BACKEND_BASE_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:5000/api';
+const BACKEND_BASE_URL = import.meta.env.VITE_APP_API_URL || 'https://backend-110685455967.asia-south1.run.app/api';
 
 const SubscriptionPlanPage = () => {
   const navigate = useNavigate();
