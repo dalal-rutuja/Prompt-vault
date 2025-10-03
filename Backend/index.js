@@ -117,7 +117,11 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // CORS setup
-const allowedOrigins = ["http://localhost:5173"];
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://nexsummarizer.netlify.app"
+];
 app.use(cors({
   origin: allowedOrigins,
   credentials: true
