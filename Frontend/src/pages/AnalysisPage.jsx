@@ -1920,59 +1920,309 @@ const AnalysisPage = () => {
     return llmModels.find(m => m.id === modelId) || llmModels[0];
   };
 
-  const handleExportToPDF = async () => {
-    if (selectedQuestionIndex === null) {
-      setError("Please select a question to export");
-      return;
+const handleExportToPDF = async () => {
+  if (selectedQuestionIndex === null) {
+    setError("Please select a question to export");
+    return;
+  }
+
+  setIsExportingPDF(true);
+
+  try {
+    const { jsPDF } = await import('jspdf');
+    
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    let yPos = margin;
+
+    // Helper function to check if we need a new page
+    const checkPageBreak = (requiredSpace = 15) => {
+      if (yPos + requiredSpace > pageHeight - margin) {
+        doc.addPage();
+        yPos = margin;
+        return true;
+      }
+      return false;
+    };
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Legal Analysis Report", margin, yPos);
+    yPos += 8;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, margin, yPos);
+    yPos += 6;
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+    
+    // Question Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text("QUESTION:", margin, yPos);
+    yPos += 6;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    const questionLines = doc.splitTextToSize(messages[selectedQuestionIndex].q, pageWidth - 2 * margin);
+    questionLines.forEach(line => {
+      checkPageBreak();
+      doc.text(line, margin, yPos);
+      yPos += 6;
+    });
+    yPos += 5;
+    
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+    
+    // Answer Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text("ANSWER:", margin, yPos);
+    yPos += 8;
+    
+    // Parse markdown content
+    const markdown = messages[selectedQuestionIndex].a;
+    const lines = markdown.split('\n');
+    
+    let inCodeBlock = false;
+    let inTable = false;
+    let tableData = [];
+    const lineHeight = 6;
+    
+    // Helper function to draw a table
+    const drawTable = (data, startY) => {
+      if (data.length === 0) return startY;
+      
+      const colCount = data[0].length;
+      const colWidth = (pageWidth - 2 * margin) / colCount;
+      const rowHeight = 8;
+      
+      checkPageBreak(data.length * rowHeight + 5);
+      
+      doc.setLineWidth(0.2);
+      doc.setDrawColor(180, 180, 180);
+      
+      data.forEach((row, rowIndex) => {
+        if (rowIndex > 0) checkPageBreak(rowHeight + 2);
+        
+        if (rowIndex === 0) {
+          doc.setFillColor(245, 245, 245);
+          doc.rect(margin, yPos, pageWidth - 2 * margin, rowHeight, 'FD');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+        }
+        
+        row.forEach((cell, colIndex) => {
+          const cellX = margin + colIndex * colWidth;
+          const cellY = yPos;
+          
+          // Draw cell border
+          doc.rect(cellX, cellY, colWidth, rowHeight);
+          
+          // Clean and add cell text
+          const cleanCell = cell.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').trim();
+          const cellLines = doc.splitTextToSize(cleanCell, colWidth - 4);
+          doc.text(cellLines[0] || '', cellX + 2, cellY + 6);
+        });
+        
+        yPos += rowHeight;
+      });
+      
+      yPos += 5;
+      return yPos;
+    };
+    
+    // Process each line
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+      
+      // Code blocks
+      if (line.trim().startsWith('```')) {
+        inCodeBlock = !inCodeBlock;
+        if (!inCodeBlock) yPos += 5;
+        continue;
+      }
+      
+      if (inCodeBlock) {
+        checkPageBreak();
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(60, 60, 60);
+        doc.setFillColor(245, 245, 245);
+        doc.rect(margin, yPos - 4, pageWidth - 2 * margin, lineHeight, 'F');
+        doc.text(line, margin + 3, yPos);
+        yPos += lineHeight;
+        continue;
+      }
+      
+      // Tables
+      if (line.includes('|')) {
+        if (!inTable) {
+          inTable = true;
+          tableData = [];
+        }
+        const cells = line.split('|').map(c => c.trim()).filter(c => c);
+        if (cells.length > 0 && !cells.every(c => c.match(/^[-:]+$/))) {
+          tableData.push(cells);
+        }
+        continue;
+      } else if (inTable) {
+        inTable = false;
+        if (tableData.length > 0) {
+          yPos = drawTable(tableData, yPos);
+          tableData = [];
+        }
+      }
+      
+      // Headings
+      if (line.startsWith('# ')) {
+        checkPageBreak(12);
+        yPos += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        doc.text(line.substring(2), margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 6;
+      } else if (line.startsWith('## ')) {
+        checkPageBreak(10);
+        yPos += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(40, 40, 40);
+        doc.text(line.substring(3), margin, yPos);
+        yPos += 8;
+      } else if (line.startsWith('### ')) {
+        checkPageBreak(8);
+        yPos += 3;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(60, 60, 60);
+        doc.text(line.substring(4), margin, yPos);
+        yPos += 7;
+      }
+      // Lists
+      else if (line.match(/^\d+\.\s/)) {
+        checkPageBreak();
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        const match = line.match(/^(\d+\.)\s(.+)/);
+        if (match) {
+          const text = match[2].replace(/\*\*(.+?)\*\*/g, '$1');
+          const wrappedText = doc.splitTextToSize(text, pageWidth - 2 * margin - 15);
+          doc.text(match[1], margin, yPos);
+          wrappedText.forEach((textLine, idx) => {
+            if (idx > 0) {
+              checkPageBreak();
+              yPos += lineHeight;
+            }
+            doc.text(textLine, margin + 10, yPos);
+          });
+          yPos += lineHeight + 2;
+        }
+      } else if (line.match(/^[-*]\s/)) {
+        checkPageBreak();
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        const text = line.substring(2).replace(/\*\*(.+?)\*\*/g, '$1');
+        doc.circle(margin + 2, yPos - 2, 1, 'F');
+        const wrappedText = doc.splitTextToSize(text, pageWidth - 2 * margin - 10);
+        wrappedText.forEach((textLine, idx) => {
+          if (idx > 0) {
+            checkPageBreak();
+            yPos += lineHeight;
+          }
+          doc.text(textLine, margin + 6, yPos);
+        });
+        yPos += lineHeight + 2;
+      }
+      // Empty lines
+      else if (line.trim() === '') {
+        yPos += 4;
+      }
+      // Regular paragraphs
+      else {
+        checkPageBreak();
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        
+        // Handle bold and italic
+        let processedText = line;
+        const segments = [];
+        const boldMatches = [...line.matchAll(/\*\*(.+?)\*\*/g)];
+        
+        let lastIndex = 0;
+        boldMatches.forEach(match => {
+          if (match.index > lastIndex) {
+            segments.push({ text: line.substring(lastIndex, match.index), bold: false });
+          }
+          segments.push({ text: match[1], bold: true });
+          lastIndex = match.index + match[0].length;
+        });
+        if (lastIndex < line.length) {
+          segments.push({ text: line.substring(lastIndex), bold: false });
+        }
+        if (segments.length === 0) {
+          segments.push({ text: line, bold: false });
+        }
+        
+        let currentX = margin;
+        segments.forEach(seg => {
+          doc.setFont('helvetica', seg.bold ? 'bold' : 'normal');
+          const words = seg.text.split(' ');
+          words.forEach((word, idx) => {
+            const wordWidth = doc.getTextWidth(word + ' ');
+            if (currentX + wordWidth > pageWidth - margin && currentX > margin) {
+              yPos += lineHeight;
+              checkPageBreak();
+              currentX = margin;
+            }
+            doc.text(word + (idx < words.length - 1 ? ' ' : ''), currentX, yPos);
+            currentX += wordWidth;
+          });
+        });
+        yPos += lineHeight + 1;
+      }
+    }
+    
+    // Handle remaining table data
+    if (inTable && tableData.length > 0) {
+      drawTable(tableData, yPos);
     }
 
-    setIsExportingPDF(true);
-
-    try {
-      const { jsPDF } = await import('jspdf');
-      
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 20;
-      let yPosition = margin;
-
-      doc.setTextColor(31, 41, 55);
-      doc.setFontSize(22);
-      doc.setFont('times', 'bold');
-      doc.text("Legal Analysis Report", margin, yPosition);
-      yPosition += 10;
-      
-      doc.setFontSize(10);
-      doc.setFont('times', 'normal');
-      doc.setTextColor(107, 114, 128);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, margin, yPosition);
-      yPosition += 8;
-      
-      doc.setDrawColor(209, 213, 219);
-      doc.setLineWidth(0.5);
-      doc.line(margin, yPosition, pageWidth - margin, yPosition);
-      yPosition += 12;
-      
-      doc.setFont('times', 'normal');
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(11);
-
-      const text = messages[selectedQuestionIndex].a;
-      const splitText = doc.splitTextToSize(text, pageWidth - 2 * margin);
-      doc.text(splitText, margin, yPosition);
-
-      const filename = `Legal_Analysis_${new Date().getTime()}.pdf`;
-      doc.save(filename);
-      
-      setSuccess("PDF exported successfully!");
-    } catch (err) {
-      console.error("PDF export error:", err);
-      setError("Failed to export PDF: " + err.message);
-    } finally {
-      setIsExportingPDF(false);
-    }
-  };
+    const filename = `Legal_Analysis_${new Date().getTime()}.pdf`;
+    doc.save(filename);
+    
+    setSuccess("PDF exported successfully!");
+  } catch (err) {
+    console.error("PDF export error:", err);
+    setError("Failed to export PDF: " + err.message);
+  } finally {
+    setIsExportingPDF(false);
+  }
+};
 
   const markdownComponents = {
     table: ({ node, ...props }) => (
