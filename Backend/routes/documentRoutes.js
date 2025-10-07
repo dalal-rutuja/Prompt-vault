@@ -57,7 +57,17 @@ const { protect } = require('../middleware/auth');
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Batch Upload & processing for large documents
-router.post('/batch-upload', protect, upload.single('document'), controller.batchUploadDocument);
+// router.post('/batch-upload', protect, upload.single('document'), controller.batchUploadDocument);
+
+
+// Option A: Use .any() to accept any field name (most flexible)
+router.post(
+  '/batch-upload', 
+  protect, 
+  upload.any(), // Accepts all files regardless of field name
+  controller.batchUploadDocument
+);
+
 
 // Post-processing analytics
 router.post('/analyze', protect, controller.analyzeDocument);

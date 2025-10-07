@@ -2547,59 +2547,51 @@ exports.getDocumentProcessingStatus = async (req, res) => {
   }
 };
 
+
+
 /**
- * 🆕 @description Batch upload document with Document AI cost tracking
+ * 🆕 Batch upload document with Document AI cost tracking
  * @route POST /api/doc/batch-upload
  */
 // exports.batchUploadDocument = async (req, res) => {
 //   try {
-//     console.log(`[batchUploadDocument] Received batch upload request.`);
-//     if (!req.user?.id) {
-//       return res.status(401).json({ error: "Unauthorized" });
-//     }
-
 //     const userId = req.user.id;
-//     const authorizationHeader = req.headers.authorization;
-
-//     console.warn(`⚠️ Payment Service subscription/token check bypassed for user ${userId}.`);
-
 //     const file = req.file;
-//     if (!file || !file.buffer) {
-//       return res.status(400).json({ error: "No file uploaded or invalid file data." });
-//     }
+//     if (!file) return res.status(400).json({ error: "No file uploaded." });
 
-//     const originalFilename = file.originalname;
 //     const mimeType = file.mimetype;
-
-//     // 🆕 CALCULATE DOCUMENT AI COST BEFORE PROCESSING
 //     const monthlyUsage = await getMonthlyDocumentAIUsage(userId);
-//     const processorType = 'ocr'; // Batch processing typically uses OCR
-    
-//     // const aiCost = calculateDocumentAICost({
-//     //   processorType,
-//     //   fileSize: file.size,
-//     //   mimeType: mimeType,
-//     //   monthlyUsage,
-//     //   useOcrAddons: false
-//     // });
+//     const processorType = "ocr";
 
+//     // ✅ Await here too
 //     const pageCount = await calculatePageCount(file.size, mimeType, file.buffer);
-// const aiCost = calculateDocumentAICost({
-//   processorType,
-//   fileSize: file.size,
-//   mimeType: mimeType,
-//   actualPages: pageCount,
-//   monthlyUsage,
-//   useOcrAddons: false
-// });
+//     const aiCost = await calculateDocumentAICost({
+//       fileSize: file.size,
+//       mimeType,
+//       actualPages: pageCount,
+//       monthlyUsage,
+//       useOcrAddons: false
+//     });
 
+//     if (!aiCost || !aiCost.total) {
+//       console.error("⚠️ Invalid aiCost:", aiCost);
+//       // Consider returning an error or setting default values
+//       aiCost = {
+//         pageCount: 0,
+//         total: { costINR: 0, costUSD: 0 }
+//       };
+//     }
 
 //     console.log(`📄 Batch upload: ${aiCost.pageCount} pages using ${processorType}`);
-//     console.log(`💰 Estimated cost: ₹${aiCost.total.costINR} ($${aiCost.total.costUSD})`);
+//     if (aiCost.total) {
+//       console.log(`💰 Estimated cost: ₹${aiCost.total.costINR} ($${aiCost.total.costUSD})`);
+//     } else {
+//       console.log(`💰 Estimated cost: Cost calculation failed`);
+//     }
 
 //     const batchUploadFolder = `batch-uploads/${userId}/${uuidv4()}`;
 //     const { gsUri: gcsInputUri, gcsPath: folderPath } = await uploadToGCS(
-//       originalFilename,
+//       file.originalname,
 //       file.buffer,
 //       batchUploadFolder,
 //       true,
@@ -2608,34 +2600,21 @@ exports.getDocumentProcessingStatus = async (req, res) => {
 
 //     const outputPrefix = `document-ai-results/${userId}/${uuidv4()}/`;
 //     const gcsOutputUriPrefix = `gs://${fileOutputBucket.name}/${outputPrefix}`;
-
-//     const operationName = await batchProcessDocument(
-//       [gcsInputUri],
-//       gcsOutputUriPrefix,
-//       mimeType
-//     );
-//     console.log(`📄 Started Document AI batch operation: ${operationName}`);
+//     const operationName = await batchProcessDocument([gcsInputUri], gcsOutputUriPrefix, mimeType);
 
 //     const fileId = await DocumentModel.saveFileMetadata(
-//       userId,
-//       originalFilename,
-//       gcsInputUri,
-//       folderPath,
-//       mimeType,
-//       file.size,
-//       "batch_queued"
+//       userId, file.originalname, gcsInputUri, folderPath, mimeType, file.size, "batch_queued"
 //     );
-//     console.log(`[batchUploadDocument] Saved file metadata with ID: ${fileId}`);
 
-//     // 🆕 SAVE DOCUMENT AI USAGE
+//     // ✅ Fixed usage save (numeric pageCount only)
 //     await saveDocumentAIUsage({
 //       userId,
 //       fileId,
 //       processorType: aiCost.processorType,
-//       pageCount: aiCost.pageCount,
+//       pageCount: Number(aiCost.pageCount),
 //       costUSD: aiCost.total.costUSD,
 //       costINR: aiCost.total.costINR,
-//       mimeType: mimeType,
+//       mimeType,
 //       fileSize: file.size,
 //       monthlyUsageAtTime: monthlyUsage,
 //       tierUsed: aiCost.breakdown.base.tier
@@ -2649,20 +2628,16 @@ exports.getDocumentProcessingStatus = async (req, res) => {
 //       gcs_input_uri: gcsInputUri,
 //       gcs_output_uri_prefix: gcsOutputUriPrefix,
 //       document_ai_operation_name: operationName,
-//       status: "queued",
+//       status: "queued"
 //     });
 
 //     await DocumentModel.updateFileStatus(fileId, "batch_processing", 0.0);
-
-//     console.log(`📊 Document AI cost: ₹${aiCost.total.costINR} for ${aiCost.pageCount} pages`);
+//     console.log(`✅ Batch Document AI job created successfully`);
 
 //     return res.status(202).json({
 //       file_id: fileId,
 //       job_id: jobId,
-//       message: "Batch document upload successful; processing initiated.",
 //       operation_name: operationName,
-//       gcs_input_uri: gcsInputUri,
-//       gcs_output_uri_prefix: gcsOutputUriPrefix,
 //       document_ai_cost: {
 //         pages: aiCost.pageCount,
 //         cost_inr: aiCost.total.costINR,
@@ -2672,114 +2647,163 @@ exports.getDocumentProcessingStatus = async (req, res) => {
 //     });
 //   } catch (error) {
 //     console.error("❌ Batch Upload Error:", error);
-//     return res.status(500).json({
-//       error: "Failed to initiate batch processing",
-//       details: error.message,
-//     });
+//     return res.status(500).json({ error: "Failed to initiate batch processing", details: error.message });
 //   }
 // };
 
-/**
- * 🆕 Batch upload document with Document AI cost tracking
- * @route POST /api/doc/batch-upload
- */
+
 exports.batchUploadDocument = async (req, res) => {
   try {
     const userId = req.user.id;
-    const file = req.file;
-    if (!file) return res.status(400).json({ error: "No file uploaded." });
-
-    const mimeType = file.mimetype;
-    const monthlyUsage = await getMonthlyDocumentAIUsage(userId);
-    const processorType = "ocr";
-
-    // ✅ Await here too
-    const pageCount = await calculatePageCount(file.size, mimeType, file.buffer);
-    const aiCost = await calculateDocumentAICost({
-      fileSize: file.size,
-      mimeType,
-      actualPages: pageCount,
-      monthlyUsage,
-      useOcrAddons: false
-    });
-
-    if (!aiCost || !aiCost.total) {
-      console.error("⚠️ Invalid aiCost:", aiCost);
-      // Consider returning an error or setting default values
-      aiCost = {
-        pageCount: 0,
-        total: { costINR: 0, costUSD: 0 }
-      };
-    }
-
-    console.log(`📄 Batch upload: ${aiCost.pageCount} pages using ${processorType}`);
-    if (aiCost.total) {
-      console.log(`💰 Estimated cost: ₹${aiCost.total.costINR} ($${aiCost.total.costUSD})`);
-    } else {
-      console.log(`💰 Estimated cost: Cost calculation failed`);
+    const files = req.files; // Changed from req.file to req.files
+    
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded." });
     }
 
     const batchUploadFolder = `batch-uploads/${userId}/${uuidv4()}`;
-    const { gsUri: gcsInputUri, gcsPath: folderPath } = await uploadToGCS(
-      file.originalname,
-      file.buffer,
-      batchUploadFolder,
-      true,
-      mimeType
-    );
-
     const outputPrefix = `document-ai-results/${userId}/${uuidv4()}/`;
     const gcsOutputUriPrefix = `gs://${fileOutputBucket.name}/${outputPrefix}`;
-    const operationName = await batchProcessDocument([gcsInputUri], gcsOutputUriPrefix, mimeType);
 
-    const fileId = await DocumentModel.saveFileMetadata(
-      userId, file.originalname, gcsInputUri, folderPath, mimeType, file.size, "batch_queued"
+    const uploadedFiles = [];
+    const gcsInputUris = [];
+    let totalPages = 0;
+    let totalCostINR = 0;
+    let totalCostUSD = 0;
+
+    const monthlyUsage = await getMonthlyDocumentAIUsage(userId);
+
+    // Process each file
+    for (const file of files) {
+      const mimeType = file.mimetype;
+      const processorType = "ocr";
+
+      // Calculate cost for this file
+      const pageCount = await calculatePageCount(file.size, mimeType, file.buffer);
+      const aiCost = await calculateDocumentAICost({
+        fileSize: file.size,
+        mimeType,
+        actualPages: pageCount,
+        monthlyUsage: monthlyUsage + totalPages, // Account for cumulative usage
+        useOcrAddons: false
+      });
+
+      if (!aiCost || !aiCost.total) {
+        console.error("⚠️ Invalid aiCost for file:", file.originalname);
+        aiCost = {
+          pageCount: 0,
+          total: { costINR: 0, costUSD: 0 },
+          processorType: "ocr",
+          breakdown: { base: { tier: "unknown" } }
+        };
+      }
+
+      totalPages += aiCost.pageCount;
+      totalCostINR += aiCost.total.costINR;
+      totalCostUSD += aiCost.total.costUSD;
+
+      // Upload to GCS
+      const { gsUri: gcsInputUri, gcsPath: folderPath } = await uploadToGCS(
+        file.originalname,
+        file.buffer,
+        batchUploadFolder,
+        true,
+        mimeType
+      );
+
+      gcsInputUris.push(gcsInputUri);
+
+      // Save file metadata
+      const fileId = await DocumentModel.saveFileMetadata(
+        userId, 
+        file.originalname, 
+        gcsInputUri, 
+        folderPath, 
+        mimeType, 
+        file.size, 
+        "batch_queued"
+      );
+
+      // Save usage data for each file
+      await saveDocumentAIUsage({
+        userId,
+        fileId,
+        processorType: aiCost.processorType,
+        pageCount: Number(aiCost.pageCount),
+        costUSD: aiCost.total.costUSD,
+        costINR: aiCost.total.costINR,
+        mimeType,
+        fileSize: file.size,
+        monthlyUsageAtTime: monthlyUsage + (totalPages - aiCost.pageCount),
+        tierUsed: aiCost.breakdown.base.tier
+      });
+
+      uploadedFiles.push({
+        fileId,
+        fileName: file.originalname,
+        pages: aiCost.pageCount,
+        costINR: aiCost.total.costINR,
+        costUSD: aiCost.total.costUSD
+      });
+    }
+
+    console.log(`📄 Batch upload: ${files.length} files, ${totalPages} total pages`);
+    console.log(`💰 Total estimated cost: ₹${totalCostINR.toFixed(2)} ($${totalCostUSD.toFixed(2)})`);
+
+    // Process all files together in one batch operation
+    const operationName = await batchProcessDocument(
+      gcsInputUris, 
+      gcsOutputUriPrefix, 
+      files[0].mimetype // Assuming same type; adjust if needed
     );
 
-    // ✅ Fixed usage save (numeric pageCount only)
-    await saveDocumentAIUsage({
-      userId,
-      fileId,
-      processorType: aiCost.processorType,
-      pageCount: Number(aiCost.pageCount),
-      costUSD: aiCost.total.costUSD,
-      costINR: aiCost.total.costINR,
-      mimeType,
-      fileSize: file.size,
-      monthlyUsageAtTime: monthlyUsage,
-      tierUsed: aiCost.breakdown.base.tier
-    });
+    const batchJobId = uuidv4(); // Overall batch identifier
+    const jobIds = []; // Store individual job IDs
 
-    const jobId = uuidv4();
-    await ProcessingJobModel.createJob({
-      job_id: jobId,
-      file_id: fileId,
-      type: "batch",
-      gcs_input_uri: gcsInputUri,
-      gcs_output_uri_prefix: gcsOutputUriPrefix,
-      document_ai_operation_name: operationName,
-      status: "queued"
-    });
+    // Create processing jobs for each file
+    for (const fileData of uploadedFiles) {
+      const jobId = uuidv4(); // ← Generate unique ID for EACH file
+      
+      await ProcessingJobModel.createJob({
+        job_id: jobId,
+        file_id: fileData.fileId,
+        type: "batch",
+        batch_id: batchJobId, // Link files in same batch
+        gcs_input_uri: gcsInputUris[uploadedFiles.indexOf(fileData)],
+        gcs_output_uri_prefix: gcsOutputUriPrefix,
+        document_ai_operation_name: operationName,
+        status: "queued"
+      });
 
-    await DocumentModel.updateFileStatus(fileId, "batch_processing", 0.0);
-    console.log(`✅ Batch Document AI job created successfully`);
+      await DocumentModel.updateFileStatus(fileData.fileId, "batch_processing", 0.0);
+      
+      jobIds.push(jobId);
+    }
+
+    console.log(`✅ Batch Document AI job created successfully for ${files.length} files`);
 
     return res.status(202).json({
-      file_id: fileId,
-      job_id: jobId,
+      batch_id: batchJobId, // Overall batch identifier
+      job_ids: jobIds, // Individual job IDs for each file
       operation_name: operationName,
-      document_ai_cost: {
-        pages: aiCost.pageCount,
-        cost_inr: aiCost.total.costINR,
-        cost_usd: aiCost.total.costUSD,
-        tier: aiCost.breakdown.base.tier
-      }
+      files: uploadedFiles.map((file, index) => ({
+        ...file,
+        job_id: jobIds[index]
+      })),
+      total_pages: totalPages,
+      total_cost_inr: totalCostINR,
+      total_cost_usd: totalCostUSD
     });
   } catch (error) {
     console.error("❌ Batch Upload Error:", error);
-    return res.status(500).json({ error: "Failed to initiate batch processing", details: error.message });
+    return res.status(500).json({ 
+      error: "Failed to initiate batch processing", 
+      details: error.message 
+    });
   }
 };
+
+
 /**
  * @description Get user storage utilization
  * @route GET /api/doc/user-storage-utilization
