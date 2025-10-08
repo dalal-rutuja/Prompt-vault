@@ -1777,7 +1777,8 @@ exports.analyzeDocument = async (req, res) => {
     if (!file_id)
       return res.status(400).json({ error: "file_id is required." });
 
-    const validModels = ['gemini', 'gemini-pro-2.5', 'claude-sonnet-4', 'anthropic'];
+    // Updated valid models list to include GPT-4o
+    const validModels = ['gemini', 'gemini-pro-2.5', 'claude-sonnet-4', 'anthropic', 'openai', 'gpt-4o', 'deepseek'];
     const selectedModel = validModels.includes(model) ? model : 'gemini-pro-2.5';
 
     const file = await DocumentModel.getFileById(file_id);
@@ -2070,7 +2071,8 @@ exports.getSummary = async (req, res) => {
       return res.status(400).json({ error: "No chunks selected for summary." });
     }
 
-    const validModels = ['gemini', 'gemini-pro-2.5', 'claude-sonnet-4', 'anthropic'];
+    // Updated valid models list to include GPT-4o
+    const validModels = ['gemini', 'gemini-pro-2.5', 'claude-sonnet-4', 'anthropic', 'openai', 'gpt-4o', 'deepseek'];
     const selectedModel = validModels.includes(model) ? model : 'gemini-pro-2.5';
 
     const file = await DocumentModel.getFileById(file_id);

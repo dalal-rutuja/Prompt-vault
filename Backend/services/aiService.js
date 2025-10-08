@@ -1,6 +1,7 @@
 
 
 
+
 require('dotenv').config();
 const axios = require('axios');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -47,6 +48,14 @@ const LLM_CONFIGS = {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
     },
   },
+  'gpt-4o': {
+    apiUrl: 'https://api.openai.com/v1/chat/completions',
+    model: 'gpt-4o',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+  },
   anthropic: {
     apiUrl: 'https://api.anthropic.com/v1/messages',
     model: 'claude-3-5-haiku-20241022',
@@ -76,19 +85,17 @@ const LLM_CONFIGS = {
 };
 
 // ---------------------------
-// CORRECTED Model name mappings for Gemini
+// Model name mappings for Gemini
 // ---------------------------
 const GEMINI_MODELS = {
-  // Use GA models for the general 'gemini' category
   'gemini': [
-    'gemini-2.5-flash',       // Latest, most efficient flash model
-    'gemini-1.5-flash',       // Older version, good fallback
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
   ],
-  // Use GA models for 'pro' (higher performance/context) category
   'gemini-pro-2.5': [
-    'gemini-2.5-pro',         // Latest Pro model (assuming access)
-    'gemini-1.5-pro',         // Older Pro version, good fallback
-    'gemini-2.5-flash'        // Fallback to latest flash if Pro fails
+    'gemini-2.5-pro',
+    'gemini-1.5-pro',
+    'gemini-2.5-flash'
   ]
 };
 
@@ -119,13 +126,11 @@ async function askLLM(provider, userMessage, context = '') {
           console.warn(`Model ${modelName} failed:`, error.message);
           lastError = error;
           
-          // Skip quota errors and try next model
           if (error.message.includes('quota') || error.message.includes('429')) {
             console.log(`Quota exceeded for ${modelName}, trying next model...`);
             continue;
           }
           
-          // Skip 404 not found errors and try next model
           if (error.message.includes('404') || error.message.includes('not found')) {
             console.log(`Model ${modelName} not found, trying next model...`);
             continue;
@@ -158,7 +163,7 @@ async function askLLM(provider, userMessage, context = '') {
         ],
       };
     } else {
-      // OpenAI and DeepSeek
+      // OpenAI, GPT-4o, and DeepSeek
       requestBody = {
         model: config.model,
         messages: [
