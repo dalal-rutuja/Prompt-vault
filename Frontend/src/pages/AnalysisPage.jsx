@@ -2915,34 +2915,14 @@
 
 
 
-
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Loader2,
-  Send,
-  Paperclip,
-  ChevronDown,
-  Brain,
-  AlertCircle,
-  CheckCircle,
-  X,
-  Copy,
-  Check,
-  Square,
-  ArrowLeft,
-  Plus,
-  FileDown,
-  FileText,
-  Sparkles,
-  Zap,
-  DollarSign,
-  FileType,
-  MoreVertical,
-  Trash2,
-  Upload,
+  Loader2, Send, Paperclip, ChevronDown, Brain, AlertCircle, CheckCircle,
+  X, Copy, Check, Square, ArrowLeft, Plus, FileDown, FileText, Sparkles,
+  Zap, FileType, MoreVertical, Upload
 } from "lucide-react";
 
 const AnalysisPage = () => {
@@ -2951,6 +2931,7 @@ const AnalysisPage = () => {
   const navigate = useNavigate();
   const sessionFromHistory = location.state?.session;
 
+  // All state variables
   const [fileId, setFileId] = useState(file_id || null);
   const [file, setFile] = useState(null);
   const [files, setFiles] = useState([]);
@@ -2960,27 +2941,20 @@ const AnalysisPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [abortController, setAbortController] = useState(null);
-
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
-
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [selectedModel, setSelectedModel] = useState("gemini");
-
   const [showSplit, setShowSplit] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-
   const [sessionStats, setSessionStats] = useState(null);
   const [documentAICost, setDocumentAICost] = useState(null);
-  const [costEstimate, setCostEstimate] = useState(null);
-  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
   const [showCostDropdown, setShowCostDropdown] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -2991,66 +2965,27 @@ const AnalysisPage = () => {
   const API_BASE_URL = "https://backend-110685455967.asia-south1.run.app";
 
   const llmModels = [
-    { 
-      id: "gemini", 
-      name: "Gemini 2.0 Flash",
-      icon: Zap,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      description: "Fast & efficient"
-    },
-    { 
-      id: "gemini-pro-2.5", 
-      name: "Gemini 2.5 Pro",
-      icon: Sparkles,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      description: "Advanced reasoning",
-    },
-    { 
-      id: "anthropic", 
-      name: "Claude 3.5 Haiku",
-      icon: Zap,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      description: "Quick responses"
-    },
-    { 
-      id: "claude-sonnet-4", 
-      name: "Claude 4.0 Sonnet",
-      icon: Brain,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-      description: "Most intelligent",
-    },
-    { 
-      id: "openai", 
-      name: "GPT-4o Mini",
-      icon: Zap,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      description: "Balanced performance"
-    },
-    { 
-      id: "deepseek", 
-      name: "DeepSeek Chat",
-      icon: Brain,
-      color: "text-teal-600",
-      bgColor: "bg-teal-50",
-      description: "Cost-effective"
-    },
+    { id: "gemini", name: "Gemini 2.0 Flash", icon: Zap, color: "text-blue-600", description: "Fast & efficient" },
+    { id: "gemini-pro-2.5", name: "Gemini 2.5 Pro", icon: Sparkles, color: "text-purple-600", description: "Advanced reasoning" },
+    { id: "anthropic", name: "Claude 3.5 Haiku", icon: Zap, color: "text-orange-600", description: "Quick responses" },
+    { id: "claude-sonnet-4", name: "Claude 4.0 Sonnet", icon: Brain, color: "text-indigo-600", description: "Most intelligent" },
+    { id: "openai", name: "GPT-4o Mini", icon: Zap, color: "text-green-600", description: "Balanced performance" },
+    { id: "deepseek", name: "DeepSeek Chat", icon: Brain, color: "text-teal-600", description: "Cost-effective" },
   ];
+
+  const getAuthToken = () => {
+    const keys = ["authToken", "token", "accessToken", "jwt", "bearerToken"];
+    for (const k of keys) {
+      const val = localStorage.getItem(k);
+      if (val) return val;
+    }
+    return null;
+  };
 
   const calculateSessionStats = (messages) => {
     if (!messages || messages.length === 0) return null;
-
-    let totalPromptTokens = 0;
-    let totalCompletionTokens = 0;
-    let totalTokens = 0;
-    let totalInputCost = 0;
-    let totalOutputCost = 0;
-    let totalCost = 0;
-
+    let totalPromptTokens = 0, totalCompletionTokens = 0, totalTokens = 0;
+    let totalInputCost = 0, totalOutputCost = 0, totalCost = 0;
     messages.forEach((msg) => {
       totalPromptTokens += parseInt(msg.prompt_tokens) || 0;
       totalCompletionTokens += parseInt(msg.completion_tokens) || 0;
@@ -3059,7 +2994,6 @@ const AnalysisPage = () => {
       totalOutputCost += parseFloat(msg.output_cost_inr) || 0;
       totalCost += parseFloat(msg.total_cost_inr) || 0;
     });
-
     return {
       total_messages: messages.length,
       total_prompt_tokens: totalPromptTokens,
@@ -3071,6 +3005,8 @@ const AnalysisPage = () => {
     };
   };
 
+  const getModelInfo = (modelId) => llmModels.find(m => m.id === modelId) || llmModels[0];
+
   const fetchDocumentAICost = async (fileId) => {
     try {
       const token = getAuthToken();
@@ -3079,66 +3015,11 @@ const AnalysisPage = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.document_ai_cost) {
-          setDocumentAICost(data.document_ai_cost);
-        }
+        if (data.document_ai_cost) setDocumentAICost(data.document_ai_cost);
       }
     } catch (err) {
       console.error('Error fetching Document AI cost:', err);
     }
-  };
-
-  useEffect(() => {
-    if (sessionFromHistory && sessionFromHistory.messages) {
-      const loadedMessages = sessionFromHistory.messages.map((msg) => ({
-        q: msg.question,
-        a: msg.answer,
-        tokenUsage: {
-          promptTokens: parseInt(msg.prompt_tokens) || 0,
-          completionTokens: parseInt(msg.completion_tokens) || 0,
-          totalTokens: parseInt(msg.total_tokens) || 0,
-          inputCostINR: parseFloat(msg.input_cost_inr) || 0,
-          outputCostINR: parseFloat(msg.output_cost_inr) || 0,
-          totalCostINR: parseFloat(msg.total_cost_inr) || 0
-        },
-        model: msg.llm_model_name || 'gemini'
-      }));
-
-      const calculatedStats = calculateSessionStats(sessionFromHistory.messages);
-      if (calculatedStats) setSessionStats(calculatedStats);
-      
-      if (sessionFromHistory.document_ai_cost) {
-        setDocumentAICost(sessionFromHistory.document_ai_cost);
-      } else if (sessionFromHistory.file_id) {
-        fetchDocumentAICost(sessionFromHistory.file_id);
-      }
-
-      setMessages(loadedMessages);
-      setFileId(sessionFromHistory.file_id);
-      setShowSplit(true);
-      setSelectedQuestionIndex(loadedMessages.length - 1);
-      setProcessingStatus({ status: "processed" });
-      setFile({ name: sessionFromHistory.file_id ? `Document ${sessionFromHistory.file_id}` : "Document" });
-    }
-  }, [sessionFromHistory]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (costDropdownRef.current && !costDropdownRef.current.contains(event.target)) {
-        setShowCostDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const getAuthToken = () => {
-    const keys = ["authToken", "token", "accessToken", "jwt", "bearerToken"];
-    for (const k of keys) {
-      const val = localStorage.getItem(k);
-      if (val) return val;
-    }
-    return null;
   };
 
   const handleFileSelection = (event) => {
@@ -3153,7 +3034,6 @@ const AnalysisPage = () => {
 
   const handleFileUpload = async () => {
     if (files.length === 0) return;
-
     setIsUploading(true);
     setError(null);
     setUploadProgress(0);
@@ -3163,31 +3043,19 @@ const AnalysisPage = () => {
 
     const xhr = new XMLHttpRequest();
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        setUploadProgress(Math.round((e.loaded / e.total) * 100));
-      }
+      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
     };
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         const data = JSON.parse(xhr.responseText);
-        
         if (data.files && data.files.length > 0) {
           const firstFileId = data.files[0].fileId;
           setFileId(firstFileId);
-          
           setUploadedFilesList(files.map((f, i) => ({
-            name: f.name,
-            size: f.size,
-            fileId: data.files[i]?.fileId || null
+            name: f.name, size: f.size, fileId: data.files[i]?.fileId || null
           })));
-
-          if (data.files.length === 1) {
-            setFile({ name: files[0].name });
-          } else {
-            setFile({ name: `${files.length} files uploaded` });
-          }
-
+          setFile({ name: data.files.length === 1 ? files[0].name : `${files.length} files uploaded` });
           if (data.total_cost_inr) {
             setDocumentAICost({
               pages: data.total_pages,
@@ -3196,7 +3064,6 @@ const AnalysisPage = () => {
               tier: data.files[0]?.tier || 'standard'
             });
           }
-
           setSuccess(`${files.length} file(s) uploaded successfully!`);
           setIsUploading(false);
           setFiles([]);
@@ -3234,7 +3101,6 @@ const AnalysisPage = () => {
         });
         const data = await res.json();
         setProcessingStatus(data);
-        
         if (data.status === "processed") {
           clearInterval(interval);
           setSuccess("Document processed successfully!");
@@ -3250,30 +3116,14 @@ const AnalysisPage = () => {
     }, 2000);
   };
 
-  const handleStopGeneration = () => {
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
-      setIsProcessing(false);
-      setIsStreaming(false);
-      if (streamingIntervalRef.current) {
-        clearInterval(streamingIntervalRef.current);
-        streamingIntervalRef.current = null;
-      }
-    }
-  };
-
   const animateResponse = (text) => {
     return new Promise((resolve) => {
       setIsStreaming(true);
       setStreamingText("");
       let currentIndex = 0;
-      const chunkSize = 3;
-      const intervalTime = 20;
-
       streamingIntervalRef.current = setInterval(() => {
         if (currentIndex < text.length) {
-          currentIndex += chunkSize;
+          currentIndex += 3;
           setStreamingText(text.slice(0, currentIndex));
         } else {
           clearInterval(streamingIntervalRef.current);
@@ -3282,7 +3132,7 @@ const AnalysisPage = () => {
           setStreamingText("");
           resolve();
         }
-      }, intervalTime);
+      }, 20);
     });
   };
 
@@ -3294,7 +3144,6 @@ const AnalysisPage = () => {
 
     setIsProcessing(true);
     setError(null);
-
     const controller = new AbortController();
     setAbortController(controller);
 
@@ -3323,15 +3172,14 @@ const AnalysisPage = () => {
       if (data.sessionStats) setSessionStats(data.sessionStats);
       if (!showSplit) setShowSplit(true);
 
-      const newMessage = {
-        q: chatInput,
-        a: answer,
-        tokenUsage: data.tokenUsage,
-        model: selectedModel
-      };
+      const newMessage = { q: chatInput, a: answer, tokenUsage: data.tokenUsage, model: selectedModel };
       setMessages((prev) => [...prev, newMessage]);
       setSelectedQuestionIndex(messages.length);
       setChatInput("");
+      
+      const textarea = document.querySelector('textarea');
+      if (textarea) textarea.style.height = 'auto';
+      
       await animateResponse(answer);
       setSuccess("Response generated!");
     } catch (err) {
@@ -3343,6 +3191,19 @@ const AnalysisPage = () => {
     } finally {
       setIsProcessing(false);
       setAbortController(null);
+    }
+  };
+
+  const handleStopGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+      setIsProcessing(false);
+      setIsStreaming(false);
+      if (streamingIntervalRef.current) {
+        clearInterval(streamingIntervalRef.current);
+        streamingIntervalRef.current = null;
+      }
     }
   };
 
@@ -3370,22 +3231,14 @@ const AnalysisPage = () => {
     setIsStreaming(false);
     setSessionStats(null);
     setDocumentAICost(null);
-    setCostEstimate(null);
     setShowCostDropdown(false);
-
     if (streamingIntervalRef.current) {
       clearInterval(streamingIntervalRef.current);
       streamingIntervalRef.current = null;
     }
   };
 
-  const handleBackToHistory = () => {
-    navigate("/chat-history");
-  };
-
-  const getModelInfo = (modelId) => {
-    return llmModels.find(m => m.id === modelId) || llmModels[0];
-  };
+  const handleBackToHistory = () => navigate("/chats");
 
   const handleExportToPDF = async () => {
     if (selectedQuestionIndex === null) {
@@ -3395,11 +3248,102 @@ const AnalysisPage = () => {
     setIsExportingPDF(true);
     try {
       const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-      doc.text("Legal Analysis Report", 20, 20);
-      doc.text(`Q: ${messages[selectedQuestionIndex].q}`, 20, 40);
-      doc.text(`A: ${messages[selectedQuestionIndex].a.substring(0, 100)}...`, 20, 60);
-      doc.save(`Analysis_${new Date().getTime()}.pdf`);
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margins = { left: 20, right: 20, top: 20, bottom: 20 };
+      const contentWidth = pageWidth - margins.left - margins.right;
+      let yPos = margins.top;
+
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Legal Analysis Report', margins.left, yPos);
+      yPos += 10;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, margins.left, yPos);
+      yPos += 3;
+      const modelInfo = getModelInfo(messages[selectedQuestionIndex].model || 'gemini');
+      doc.text(`Model: ${modelInfo.name}`, margins.left, yPos);
+      yPos += 10;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margins.left, yPos, pageWidth - margins.right, yPos);
+      yPos += 8;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235);
+      doc.text('QUESTION', margins.left, yPos);
+      yPos += 6;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      const questionLines = doc.splitTextToSize(messages[selectedQuestionIndex].q, contentWidth);
+      questionLines.forEach(line => {
+        if (yPos > pageHeight - margins.bottom - 10) { doc.addPage(); yPos = margins.top; }
+        doc.text(line, margins.left, yPos);
+        yPos += 5;
+      });
+      yPos += 5;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235);
+      doc.text('ANSWER', margins.left, yPos);
+      yPos += 6;
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      const answerText = messages[selectedQuestionIndex].a;
+      const cleanedText = answerText.replace(/#{1,6}\s/g, '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '').replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1').replace(/^\s*[-•]\s+/gm, '• ').replace(/^\s*\d+\.\s+/gm, (match) => match);
+      const paragraphs = cleanedText.split(/\n\n+/);
+      paragraphs.forEach((paragraph) => {
+        if (paragraph.trim()) {
+          const isBullet = paragraph.trim().startsWith('•');
+          const isNumbered = /^\d+\./.test(paragraph.trim());
+          if (isBullet || isNumbered) {
+            const lines = paragraph.split('\n').filter(l => l.trim());
+            lines.forEach(line => {
+              if (yPos > pageHeight - margins.bottom - 10) { doc.addPage(); yPos = margins.top; }
+              const wrappedLines = doc.splitTextToSize(line.trim(), contentWidth - 5);
+              wrappedLines.forEach((wLine, wIndex) => {
+                if (yPos > pageHeight - margins.bottom - 10) { doc.addPage(); yPos = margins.top; }
+                doc.text(wLine, margins.left + (wIndex === 0 ? 0 : 5), yPos);
+                yPos += 4.5;
+              });
+              yPos += 1;
+            });
+          } else {
+            const lines = doc.splitTextToSize(paragraph.trim(), contentWidth);
+            lines.forEach(line => {
+              if (yPos > pageHeight - margins.bottom - 10) { doc.addPage(); yPos = margins.top; }
+              doc.text(line, margins.left, yPos);
+              yPos += 4.5;
+            });
+          }
+          yPos += 3;
+        }
+      });
+      if (messages[selectedQuestionIndex].tokenUsage) {
+        yPos += 5;
+        if (yPos > pageHeight - margins.bottom - 30) { doc.addPage(); yPos = margins.top; }
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margins.left, yPos, pageWidth - margins.right, yPos);
+        yPos += 6;
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Token Usage Statistics', margins.left, yPos);
+        yPos += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        const tokenUsage = messages[selectedQuestionIndex].tokenUsage;
+        doc.text(`Input Tokens: ${tokenUsage.promptTokens?.toLocaleString() || 'N/A'}`, margins.left, yPos);
+        doc.text(`Output Tokens: ${tokenUsage.completionTokens?.toLocaleString() || 'N/A'}`, margins.left + 60, yPos);
+        yPos += 4;
+        doc.text(`Total Tokens: ${tokenUsage.totalTokens?.toLocaleString() || 'N/A'}`, margins.left, yPos);
+        doc.text(`Cost: ₹${tokenUsage.totalCostINR?.toFixed(4) || 'N/A'}`, margins.left + 60, yPos);
+      }
+      doc.save(`Legal_Analysis_${new Date().getTime()}.pdf`);
       setSuccess("PDF exported successfully!");
     } catch (err) {
       setError("Failed to export PDF: " + err.message);
@@ -3409,123 +3353,96 @@ const AnalysisPage = () => {
   };
 
   const markdownComponents = {
-    h1: ({ node, ...props }) => (
-      <h1 className="text-3xl font-bold text-gray-900 mt-8 mb-4 pb-3 border-b-2 border-gray-200" {...props} />
-    ),
-    h2: ({ node, ...props }) => (
-      <h2 className="text-2xl font-semibold text-gray-800 mt-6 mb-3" {...props} />
-    ),
-    h3: ({ node, ...props }) => (
-      <h3 className="text-xl font-semibold text-gray-800 mt-5 mb-2" {...props} />
-    ),
-    p: ({ node, ...props }) => (
-      <p className="text-base text-gray-700 leading-7 my-3" {...props} />
-    ),
-    ul: ({ node, ...props }) => (
-      <ul className="list-disc list-inside space-y-2 my-4 ml-4 text-gray-700" {...props} />
-    ),
-    ol: ({ node, ...props }) => (
-      <ol className="list-decimal list-inside space-y-2 my-4 ml-4 text-gray-700" {...props} />
-    ),
-    li: ({ node, ...props }) => (
-      <li className="text-gray-700 leading-relaxed" {...props} />
-    ),
-    strong: ({ node, ...props }) => (
-      <strong className="font-semibold text-gray-900" {...props} />
-    ),
-    code: ({ node, inline, ...props }) => 
-      inline ? (
-        <code className="bg-gray-100 text-red-600 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
-      ) : (
-        <code className="block bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono my-4" {...props} />
-      ),
-    table: ({ node, ...props }) => (
-      <div className="overflow-x-auto my-6 shadow-sm rounded-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-300 bg-white" {...props} />
-      </div>
-    ),
+    h1: ({ node, ...props }) => <h1 className="text-2xl font-semibold text-gray-900 mt-8 mb-4" {...props} />,
+    h2: ({ node, ...props }) => <h2 className="text-xl font-semibold text-gray-800 mt-6 mb-3" {...props} />,
+    h3: ({ node, ...props }) => <h3 className="text-lg font-semibold text-gray-800 mt-5 mb-2.5" {...props} />,
+    p: ({ node, ...props }) => <p className="text-base text-gray-700 leading-8 my-4 font-normal" {...props} />,
+    ul: ({ node, ...props }) => <ul className="list-disc list-outside space-y-2 my-4 ml-6 text-gray-700" {...props} />,
+    ol: ({ node, ...props }) => <ol className="list-decimal list-outside space-y-2 my-4 ml-6 text-gray-700" {...props} />,
+    li: ({ node, ...props }) => <li className="text-base text-gray-700 leading-7 pl-2" {...props} />,
+    strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
+    code: ({ node, inline, ...props }) => inline ? <code className="bg-gray-100 text-[#e01e5a] px-1.5 py-0.5 rounded text-sm font-mono" {...props} /> : <code className="block bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono my-4 leading-6" {...props} />,
+    table: ({ node, ...props }) => (<div className="overflow-x-auto my-5 rounded-lg border border-gray-200"><table className="min-w-full divide-y divide-gray-300 bg-white" {...props} /></div>),
     thead: ({ node, ...props }) => <thead className="bg-gray-50" {...props} />,
     tbody: ({ node, ...props }) => <tbody className="divide-y divide-gray-200" {...props} />,
-    th: ({ node, ...props }) => (
-      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider" {...props} />
-    ),
-    td: ({ node, ...props }) => (
-      <td className="px-4 py-3 text-sm text-gray-900" {...props} />
-    ),
+    th: ({ node, ...props }) => <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide" {...props} />,
+    td: ({ node, ...props }) => <td className="px-4 py-3 text-sm text-gray-700" {...props} />,
+    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 my-4 italic text-gray-600" {...props} />,
   };
 
-  if (!showSplit) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-white px-4">
-        {session_id && (
-          <button
-            onClick={handleBackToHistory}
-            className="absolute top-6 left-6 flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="font-medium">Back to History</span>
-          </button>
-        )}
+  useEffect(() => {
+    if (sessionFromHistory && sessionFromHistory.messages) {
+      const loadedMessages = sessionFromHistory.messages.map((msg) => ({ q: msg.question, a: msg.answer, tokenUsage: { promptTokens: parseInt(msg.prompt_tokens) || 0, completionTokens: parseInt(msg.completion_tokens) || 0, totalTokens: parseInt(msg.total_tokens) || 0, inputCostINR: parseFloat(msg.input_cost_inr) || 0, outputCostINR: parseFloat(msg.output_cost_inr) || 0, totalCostINR: parseFloat(msg.total_cost_inr) || 0 }, model: msg.llm_model_name || 'gemini' }));
+      const calculatedStats = calculateSessionStats(sessionFromHistory.messages);
+      if (calculatedStats) setSessionStats(calculatedStats);
+      if (sessionFromHistory.document_ai_cost) { setDocumentAICost(sessionFromHistory.document_ai_cost); } else if (sessionFromHistory.file_id) { fetchDocumentAICost(sessionFromHistory.file_id); }
+      setMessages(loadedMessages);
+      setFileId(sessionFromHistory.file_id);
+      setShowSplit(true);
+      setSelectedQuestionIndex(loadedMessages.length - 1);
+      setProcessingStatus({ status: "processed" });
+      setFile({ name: sessionFromHistory.file_id ? `Document ${sessionFromHistory.file_id}` : "Document" });
+    }
+  }, [sessionFromHistory]);
 
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">
-            Smart Legal Insights
-          </h1>
-          <p className="text-lg text-gray-600">
-            Upload documents and get intelligent answers powered by AI
-          </p>
-        </div>
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (costDropdownRef.current && !costDropdownRef.current.contains(event.target)) setShowCostDropdown(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setShowModelDropdown(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-        {uploadedFilesList.length > 0 && (
-          <div className="w-full max-w-4xl mb-6">
-            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-700">Uploaded Files</h3>
-                <span className="text-xs text-gray-500">{uploadedFilesList.length} file(s)</span>
-              </div>
-              <div className="space-y-2">
-                {uploadedFilesList.map((file, idx) => (
-                  <div key={idx} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                      <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                    </div>
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+// RENDERING STARTS HERE - WELCOME SCREEN
+if (!showSplit) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-white px-4 py-8">
+      {session_id && (
+        <button onClick={handleBackToHistory} className="absolute top-6 left-6 flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all z-10">
+          <ArrowLeft className="h-4 w-4" />
+          <span className="font-medium">Back to History</span>
+        </button>
+      )}
+      <div className="text-center mb-12">
+        <h1 className="text-5xl font-bold text-gray-900 mb-4 tracking-tight">Smart Legal Insights</h1>
+        <p className="text-xl text-gray-600">Upload documents and get intelligent answers powered by AI</p>
+      </div>
+      {uploadedFilesList.length > 0 && (
+        <div className="w-full max-w-4xl mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">Uploaded Files</h3>
+              <span className="text-xs text-gray-500">{uploadedFilesList.length} file(s)</span>
+            </div>
+            <div className="space-y-2">
+              {uploadedFilesList.map((file, idx) => (
+                <div key={idx} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                    <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
-                ))}
-              </div>
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+              ))}
             </div>
           </div>
-        )}
-
-        {files.length > 0 && (
-          <div className="w-full max-w-4xl mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        </div>
+      )}
+      <div className="w-full max-w-4xl">
+        <div className="relative bg-white border border-gray-200 rounded-2xl shadow-lg overflow-visible">
+          {files.length > 0 && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-blue-900">Ready to Upload</h3>
-                <button
-                  onClick={handleFileUpload}
-                  disabled={isUploading}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Uploading... {uploadProgress}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4" />
-                      <span>Upload {files.length} file(s)</span>
-                    </>
-                  )}
+                <span className="text-sm font-semibold text-gray-700">{files.length} file{files.length > 1 ? 's' : ''} attached</span>
+                <button onClick={handleFileUpload} disabled={isUploading} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+                  {isUploading ? (<><Loader2 className="h-4 w-4 animate-spin" /><span>{uploadProgress}%</span></>) : (<><Upload className="h-4 w-4" /><span>Upload</span></>)}
                 </button>
               </div>
-              
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-40 overflow-y-auto">
                 {files.map((file, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200">
+                  <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                       <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -3533,74 +3450,37 @@ const AnalysisPage = () => {
                         <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleRemoveFile(idx)}
-                      disabled={isUploading}
-                      className="p-1 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                    >
+                    <button onClick={() => handleRemoveFile(idx)} disabled={isUploading} className="p-1.5 hover:bg-red-50 rounded transition-colors disabled:opacity-50 flex-shrink-0">
                       <X className="h-4 w-4 text-red-500" />
                     </button>
                   </div>
                 ))}
               </div>
-
               {isUploading && (
-                <div className="mt-4">
+                <div className="mt-3">
                   <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="h-2 bg-blue-600 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
+                    <div className="h-2 bg-blue-600 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
                   </div>
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        <div className="w-full max-w-4xl">
-          <div className="flex items-end space-x-3 bg-white border-2 border-gray-300 rounded-2xl p-4 shadow-xl">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50 flex-shrink-0"
-              title="Attach files"
-            >
-              <Plus className="h-6 w-6 text-gray-700" />
+          )}
+          <div className="flex items-center space-x-3 p-6">
+          <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="p-3 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl transition-colors disabled:opacity-50 flex-shrink-0" title="Attach files">
+              <Paperclip className="h-6 w-6 text-gray-600" />
             </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileSelection}
-              multiple
-              accept=".pdf,.docx,.txt"
-            />
-
+            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelection} multiple accept=".pdf,.docx,.txt" />
             <div className="relative flex-shrink-0" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setShowModelDropdown(!showModelDropdown)}
-                className="flex items-center space-x-2 px-4 py-3 border-2 border-gray-300 rounded-xl bg-white text-base font-medium hover:bg-gray-50 transition-colors"
-              >
+              <button type="button" onClick={() => setShowModelDropdown(!showModelDropdown)} className="flex items-center space-x-2 px-4 py-3 border border-gray-300 rounded-xl bg-white text-base font-medium hover:bg-gray-50 transition-colors">
                 <span className="text-gray-700">{getModelInfo(selectedModel).name}</span>
                 <ChevronDown className="h-5 w-5 text-gray-500" />
               </button>
               {showModelDropdown && (
-                <div className="absolute bottom-full mb-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-20 overflow-hidden">
+                <div className="absolute top-full mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
                   {llmModels.map((m) => {
                     const Icon = m.icon;
                     return (
-                      <button
-                        key={m.id}
-                        onClick={() => {
-                          setSelectedModel(m.id);
-                          setShowModelDropdown(false);
-                        }}
-                        className={`block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
-                          selectedModel === m.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''
-                        }`}
-                      >
+                      <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelDropdown(false); }} className={`block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${selectedModel === m.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''}`}>
                         <div className="flex items-center space-x-3">
                           <Icon className={`h-5 w-5 ${m.color}`} />
                           <div className="flex-1">
@@ -3614,497 +3494,205 @@ const AnalysisPage = () => {
                 </div>
               )}
             </div>
-
-            <textarea
-              rows={3}
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e);
-                }
-              }}
-              placeholder={!file ? "Upload documents to start..." : "Ask me anything about your documents..."}
-              className="flex-1 resize-none bg-transparent text-lg text-gray-900 placeholder-gray-400 outline-none py-2"
-              style={{ minHeight: "80px", maxHeight: "200px" }}
-              disabled={!file || processingStatus?.status !== "processed"}
-            />
-
-            <button
-              onClick={handleSend}
-              disabled={!file || isProcessing || processingStatus?.status !== "processed" || !chatInput.trim()}
-              className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-            >
-              {isProcessing ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
-              ) : (
-                <Send className="h-6 w-6" />
-              )}
-            </button>
-          </div>
-
-          {file && (
-            <div className="mt-4 text-center">
-              {processingStatus?.status === "batch_processing" && (
-                <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Processing documents...</span>
-                </div>
-              )}
-              {processingStatus?.status === "processed" && (
-                <div className="flex items-center justify-center space-x-2 text-sm text-green-600">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Ready to chat!</span>
-                </div>
-              )}
-              {processingStatus?.status === "error" && (
-                <div className="flex items-center justify-center space-x-2 text-sm text-red-600">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>Processing failed</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-screen bg-white">
-      <div className="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
-        <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Conversation</h2>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleNewChat}
-              className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              <span>New</span>
-            </button>
-            <button
-              onClick={handleBackToHistory}
-              className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
+            <textarea rows={1} value={chatInput} onChange={(e) => { setChatInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'; }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }} placeholder={!file ? "Upload documents to start..." : "Ask me anything about your documents..."} className="flex-1 resize-none bg-transparent text-base text-gray-900 placeholder-gray-400 outline-none py-3 leading-6" style={{ minHeight: "56px", maxHeight: "200px" }} disabled={!file || processingStatus?.status !== "processed"} />
+            <button onClick={handleSend} disabled={!file || isProcessing || processingStatus?.status !== "processed" || !chatInput.trim()} className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0">
+              {isProcessing ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
             </button>
           </div>
         </div>
-
-        {uploadedFilesList.length > 0 && (
-          <div className="px-4 py-3 border-b border-gray-200 bg-white">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Documents</h3>
-            <div className="space-y-1.5">
-              {uploadedFilesList.map((file, idx) => (
-                <div key={idx} className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
-                  <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                  <span className="text-xs text-gray-700 truncate flex-1">{file.name}</span>
-                  <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {messages.map((m, i) => {
-            const modelInfo = getModelInfo(m.model || 'gemini');
-            const ModelIcon = modelInfo.icon;
-            
-            return (
-              <div
-                key={i}
-                className={`p-3 rounded-lg shadow-sm text-sm transition-colors relative ${
-                  i === selectedQuestionIndex
-                    ? "bg-white border-2 border-blue-500 shadow-md"
-                    : "bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                }`}
-              >
-                <div 
-                  className="pr-16 cursor-pointer"
-                  onClick={() => setSelectedQuestionIndex(i)}
-                >
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="text-xs font-bold text-gray-900">Q{i + 1}</span>
-                    <ModelIcon className={`h-3 w-3 ${modelInfo.color}`} />
-                    <span className="text-xs text-gray-500">{modelInfo.name}</span>
-                  </div>
-                  <p className="text-sm text-gray-800 line-clamp-2 leading-relaxed">{m.q}</p>
-                </div>
-                
-                <div className="absolute top-2 right-2 flex items-center space-x-1">
-                  {m.tokenUsage && m.tokenUsage.totalTokens > 0 && (
-                    <div className="text-[10px] text-gray-400">
-                      {m.tokenUsage.totalTokens.toLocaleString()}
-                    </div>
-                  )}
-                  
-                  {(documentAICost || sessionStats) && i === messages.length - 1 && (
-                    <div className="relative" ref={i === messages.length - 1 ? costDropdownRef : null}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowCostDropdown(!showCostDropdown);
-                        }}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
-                      >
-                        <MoreVertical className="h-4 w-4 text-gray-500" />
-                      </button>
-
-                      {showCostDropdown && (
-                        <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold text-gray-900">Cost Breakdown</h3>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShowCostDropdown(false);
-                                }}
-                                className="text-gray-400 hover:text-gray-600"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-
-                            {documentAICost && (
-                              <div className="mb-4 pb-4 border-b border-gray-200">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center space-x-2">
-                                    <FileType className="h-5 w-5 text-indigo-600" />
-                                    <span className="text-sm font-semibold text-gray-800">Document AI</span>
-                                  </div>
-                                  <span className="text-sm font-bold text-green-700">₹{documentAICost.cost_inr}</span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3 text-xs">
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Pages:</span>
-                                    <span className="font-semibold text-gray-900">{documentAICost.pages}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">USD Cost:</span>
-                                    <span className="font-semibold text-gray-900">${documentAICost.cost_usd}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Tier:</span>
-                                    <span className="font-semibold text-gray-900 capitalize">{documentAICost.tier}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">Processor:</span>
-                                    <span className="font-semibold text-gray-900">OCR</span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {sessionStats && parseInt(sessionStats.total_tokens) > 0 && (
-                              <div>
-                                <div className="flex items-center space-x-2 mb-3">
-                                  <Brain className="h-5 w-5 text-blue-600" />
-                                  <span className="text-sm font-semibold text-gray-800">LLM Usage</span>
-                                </div>
-                                
-                                <div className="space-y-2 mb-3">
-                                  <div className="flex justify-between text-xs">
-                                    <span className="text-gray-600">Total Queries:</span>
-                                    <span className="font-semibold text-gray-900">{sessionStats.total_messages}</span>
-                                  </div>
-                                  <div className="flex justify-between text-xs">
-                                    <span className="text-gray-600">Input Tokens:</span>
-                                    <span className="font-semibold text-gray-900">
-                                      {parseInt(sessionStats.total_prompt_tokens).toLocaleString()}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between text-xs">
-                                    <span className="text-gray-600">Output Tokens:</span>
-                                    <span className="font-semibold text-gray-900">
-                                      {parseInt(sessionStats.total_completion_tokens).toLocaleString()}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between text-xs pt-2 border-t border-gray-200">
-                                    <span className="text-gray-700 font-medium">Total Tokens:</span>
-                                    <span className="font-bold text-gray-900">
-                                      {parseInt(sessionStats.total_tokens).toLocaleString()}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="pt-3 border-t border-gray-200">
-                                  <p className="font-semibold text-gray-800 mb-2 text-xs">Cost Details</p>
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between text-xs">
-                                      <span className="text-gray-600">Input Cost:</span>
-                                      <span className="font-semibold text-green-700">
-                                        ₹{parseFloat(sessionStats.total_input_cost_inr).toFixed(4)}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                      <span className="text-gray-600">Output Cost:</span>
-                                      <span className="font-semibold text-green-700">
-                                        ₹{parseFloat(sessionStats.total_output_cost_inr).toFixed(4)}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between text-xs pt-2 border-t border-gray-200">
-                                      <span className="text-gray-700 font-medium">LLM Total:</span>
-                                      <span className="font-bold text-green-800">
-                                        ₹{parseFloat(sessionStats.total_cost_inr).toFixed(4)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {documentAICost && sessionStats && parseInt(sessionStats.total_tokens) > 0 && (
-                              <div className="mt-4 pt-4 border-t-2 border-gray-300">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm font-bold text-gray-900">Grand Total:</span>
-                                  <span className="text-lg font-bold text-blue-700">
-                                    ₹{(parseFloat(sessionStats.total_cost_inr) + parseFloat(documentAICost.cost_inr)).toFixed(4)}
-                                  </span>
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-1">Document AI + LLM costs</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
         {file && (
-          <div className="px-4 py-3 text-sm border-t bg-gray-50">
-            <p className="text-gray-600 mb-2 font-medium">{file.name}</p>
+          <div className="mt-4 text-center">
+            {processingStatus?.status === "batch_processing" && (<div className="flex items-center justify-center space-x-2 text-sm text-blue-600"><Loader2 className="h-4 w-4 animate-spin" /><span>Processing documents...</span></div>)}
+            {processingStatus?.status === "processed" && (<div className="flex items-center justify-center space-x-2 text-sm text-green-600"><CheckCircle className="h-4 w-4" /><span>Ready to chat</span></div>)}
+            {processingStatus?.status === "error" && (<div className="flex items-center justify-center space-x-2 text-sm text-red-600"><AlertCircle className="h-4 w-4" /><span>Processing failed</span></div>)}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
 
-        <div className="p-4 border-t border-gray-200 bg-white">
-          <form onSubmit={handleSend} className="flex items-end space-x-2">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
-            >
-              <Plus className="h-5 w-5 text-gray-700" />
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileSelection}
-              multiple
-              accept=".pdf,.docx,.txt"
-            />
-
-            <div className="relative flex-shrink-0" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setShowModelDropdown(!showModelDropdown)}
-                className="flex items-center px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm hover:bg-gray-50 transition-colors"
-              >
-                <span className="text-gray-700">{getModelInfo(selectedModel).name}</span>
-                <ChevronDown className="h-4 w-4 ml-2 text-gray-500" />
-              </button>
-              {showModelDropdown && (
-                <div className="absolute bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-10 max-h-96 overflow-y-auto">
-                  {llmModels.map((m) => {
-                    const Icon = m.icon;
-                    return (
-                      <button
-                        key={m.id}
-                        onClick={() => {
-                          setSelectedModel(m.id);
-                          setShowModelDropdown(false);
-                        }}
-                        className={`block w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors ${
-                          selectedModel === m.id ? 'bg-blue-50' : ''
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <Icon className={`h-4 w-4 ${m.color}`} />
-                          <span className="text-sm font-medium text-gray-900">{m.name}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <textarea
-              rows={1}
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e);
-                }
-              }}
-              placeholder="Ask something..."
-              className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              style={{ minHeight: "40px", maxHeight: "150px" }}
-            />
-
-            {isProcessing ? (
-              <button
-                type="button"
-                onClick={handleStopGeneration}
-                className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex-shrink-0"
-              >
-                <Square className="h-5 w-5" />
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={isProcessing || !chatInput.trim()}
-                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-              >
-                <Send className="h-5 w-5" />
-              </button>
-            )}
-          </form>
-
-          {files.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-700">{files.length} file(s) ready</span>
-                <button
-                  onClick={handleFileUpload}
-                  disabled={isUploading}
-                  className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  {isUploading ? 'Uploading...' : 'Upload'}
-                </button>
-              </div>
-              {files.map((file, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
-                  <span className="truncate flex-1">{file.name}</span>
-                  <button onClick={() => handleRemoveFile(idx)} disabled={isUploading}>
-                    <X className="h-3 w-3 text-red-500" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+// SPLIT VIEW - CHAT INTERFACE
+return (
+  <div className="flex h-screen bg-white">
+    <div className="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
+      <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Conversation</h2>
+        <div className="flex items-center space-x-2">
+          <button onClick={handleNewChat} className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"><Plus className="h-4 w-4" /><span>New</span></button>
+          <button onClick={handleBackToHistory} className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"><ArrowLeft className="h-4 w-4" /></button>
         </div>
       </div>
-
-      <div className="w-2/3 flex flex-col bg-white">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Brain className="h-6 w-6 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">AI Response</h2>
-            {selectedQuestionIndex !== null && messages[selectedQuestionIndex] && (
-              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full">
-                {React.createElement(getModelInfo(messages[selectedQuestionIndex].model || 'gemini').icon, {
-                  className: `h-4 w-4 ${getModelInfo(messages[selectedQuestionIndex].model || 'gemini').color}`
-                })}
-                <span className="text-sm text-gray-700 font-medium">
-                  {getModelInfo(messages[selectedQuestionIndex].model || 'gemini').name}
-                </span>
+      {uploadedFilesList.length > 0 && (
+        <div className="px-4 py-3 border-b border-gray-200 bg-white">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Documents</h3>
+          <div className="space-y-1.5">
+            {uploadedFilesList.map((file, idx) => (
+              <div key={idx} className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
+                <FileText className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <span className="text-xs text-gray-700 truncate flex-1">{file.name}</span>
+                <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
               </div>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            {selectedQuestionIndex !== null && (
-              <>
-                <button
-                  onClick={handleExportToPDF}
-                  disabled={isExportingPDF}
-                  className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {isExportingPDF ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileDown className="h-4 w-4" />
-                  )}
-                  <span>Export</span>
-                </button>
-                <button
-                  onClick={() => handleCopyAnswer(messages[selectedQuestionIndex].a, selectedQuestionIndex)}
-                  className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  {copiedIndex === selectedQuestionIndex ? (
-                    <>
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span className="text-green-600">Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </>
-            )}
+            ))}
           </div>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-8 bg-white">
-          {selectedQuestionIndex !== null ? (
-            <div className="max-w-4xl mx-auto">
-              <div className="mb-8 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg">
-                <p className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2">Question</p>
-                <p className="text-lg text-gray-900 leading-relaxed font-medium">
-                  {messages[selectedQuestionIndex].q}
-                </p>
+      )}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map((m, i) => {
+          const modelInfo = getModelInfo(m.model || 'gemini');
+          const ModelIcon = modelInfo.icon;
+          return (
+            <div key={i} className={`p-3 rounded-lg shadow-sm text-sm transition-colors relative ${i === selectedQuestionIndex ? "bg-white border-2 border-blue-500 shadow-md" : "bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm"}`}>
+              <div className="pr-16 cursor-pointer" onClick={() => setSelectedQuestionIndex(i)}>
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-xs font-bold text-gray-900">Q{i + 1}</span>
+                  <ModelIcon className={`h-3 w-3 ${modelInfo.color}`} />
+                  <span className="text-xs text-gray-500">{modelInfo.name}</span>
+                </div>
+                <p className="text-sm text-gray-800 line-clamp-2 leading-relaxed">{m.q}</p>
               </div>
-
-              <div className="prose prose-lg max-w-none">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
-                  components={markdownComponents}
-                >
-                  {isStreaming && selectedQuestionIndex === messages.length - 1 
-                    ? streamingText 
-                    : messages[selectedQuestionIndex].a}
-                </ReactMarkdown>
-                {isStreaming && selectedQuestionIndex === messages.length - 1 && (
-                  <span className="inline-block w-2 h-5 bg-blue-600 animate-pulse ml-1 rounded-sm"></span>
+              <div className="absolute top-2 right-2 flex items-center space-x-1">
+                {m.tokenUsage && m.tokenUsage.totalTokens > 0 && (<div className="text-[10px] text-gray-400">{m.tokenUsage.totalTokens.toLocaleString()}</div>)}
+                {(documentAICost || sessionStats) && i === messages.length - 1 && (
+                  <div className="relative" ref={i === messages.length - 1 ? costDropdownRef : null}>
+                    <button onClick={(e) => { e.stopPropagation(); setShowCostDropdown(!showCostDropdown); }} className="p-1 hover:bg-gray-200 rounded transition-colors"><MoreVertical className="h-4 w-4 text-gray-500" /></button>
+                    {showCostDropdown && (
+                      <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-gray-900">Cost Breakdown</h3>
+                            <button onClick={(e) => { e.stopPropagation(); setShowCostDropdown(false); }} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+                          </div>
+                          {documentAICost && (
+                            <div className="mb-4 pb-4 border-b border-gray-200">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center space-x-2"><FileType className="h-5 w-5 text-indigo-600" /><span className="text-sm font-semibold text-gray-800">Document AI</span></div>
+                                <span className="text-sm font-bold text-green-700">₹{documentAICost.cost_inr}</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3 text-xs">
+                                <div className="flex justify-between"><span className="text-gray-600">Pages:</span><span className="font-semibold text-gray-900">{documentAICost.pages}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-600">USD Cost:</span><span className="font-semibold text-gray-900">${documentAICost.cost_usd}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-600">Tier:</span><span className="font-semibold text-gray-900 capitalize">{documentAICost.tier}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-600">Processor:</span><span className="font-semibold text-gray-900">OCR</span></div>
+                              </div>
+                            </div>
+                          )}
+                          {sessionStats && parseInt(sessionStats.total_tokens) > 0 && (
+                            <div>
+                              <div className="flex items-center space-x-2 mb-3"><Brain className="h-5 w-5 text-blue-600" /><span className="text-sm font-semibold text-gray-800">LLM Usage</span></div>
+                              <div className="space-y-2 mb-3">
+                                <div className="flex justify-between text-xs"><span className="text-gray-600">Total Queries:</span><span className="font-semibold text-gray-900">{sessionStats.total_messages}</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-gray-600">Input Tokens:</span><span className="font-semibold text-gray-900">{parseInt(sessionStats.total_prompt_tokens).toLocaleString()}</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-gray-600">Output Tokens:</span><span className="font-semibold text-gray-900">{parseInt(sessionStats.total_completion_tokens).toLocaleString()}</span></div>
+                                <div className="flex justify-between text-xs pt-2 border-t border-gray-200"><span className="text-gray-700 font-medium">Total Tokens:</span><span className="font-bold text-gray-900">{parseInt(sessionStats.total_tokens).toLocaleString()}</span></div>
+                              </div>
+                              <div className="pt-3 border-t border-gray-200">
+                                <p className="font-semibold text-gray-800 mb-2 text-xs">Cost Details</p>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-xs"><span className="text-gray-600">Input Cost:</span><span className="font-semibold text-green-700">₹{parseFloat(sessionStats.total_input_cost_inr).toFixed(4)}</span></div>
+                                  <div className="flex justify-between text-xs"><span className="text-gray-600">Output Cost:</span><span className="font-semibold text-green-700">₹{parseFloat(sessionStats.total_output_cost_inr).toFixed(4)}</span></div>
+                                  <div className="flex justify-between text-xs pt-2 border-t border-gray-200"><span className="text-gray-700 font-medium">LLM Total:</span><span className="font-bold text-green-800">₹{parseFloat(sessionStats.total_cost_inr).toFixed(4)}</span></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {documentAICost && sessionStats && parseInt(sessionStats.total_tokens) > 0 && (
+                            <div className="mt-4 pt-4 border-t-2 border-gray-300">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-gray-900">Grand Total:</span>
+                                <span className="text-lg font-bold text-blue-700">₹{(parseFloat(sessionStats.total_cost_inr) + parseFloat(documentAICost.cost_inr)).toFixed(4)}</span>
+                              </div>
+                              <p className="text-[10px] text-gray-500 mt-1">Document AI + LLM costs</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <div className="text-center space-y-3">
-                <Brain className="h-16 w-16 text-gray-300 mx-auto" />
-                <p className="text-xl text-gray-400 font-medium">Select a question to view the answer</p>
-                <p className="text-sm text-gray-400">Your AI-powered responses will appear here</p>
+          );
+        })}
+      </div>
+      {file && (<div className="px-4 py-3 text-sm border-t bg-gray-50"><p className="text-gray-600 mb-2 font-medium">{file.name}</p></div>)}
+      <div className="p-4 border-t border-gray-200 bg-white">
+        <form onSubmit={handleSend} className="flex items-end space-x-2">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"><Plus className="h-5 w-5 text-gray-700" /></button>
+          <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelection} multiple accept=".pdf,.docx,.txt" />
+          <div className="relative flex-shrink-0" ref={dropdownRef}>
+            <button type="button" onClick={() => setShowModelDropdown(!showModelDropdown)} className="flex items-center px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm hover:bg-gray-50 transition-colors">
+              <span className="text-gray-700">{getModelInfo(selectedModel).name}</span>
+              <ChevronDown className="h-4 w-4 ml-2 text-gray-500" />
+            </button>
+            {showModelDropdown && (
+              <div className="absolute bottom-full mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-10 max-h-96 overflow-y-auto">
+                {llmModels.map((m) => { const Icon = m.icon; return (<button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelDropdown(false); }} className={`block w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors ${selectedModel === m.id ? 'bg-blue-50' : ''}`}><div className="flex items-center space-x-2"><Icon className={`h-4 w-4 ${m.color}`} /><span className="text-sm font-medium text-gray-900">{m.name}</span></div></button>); })}
               </div>
+            )}
+          </div>
+          <textarea rows={1} value={chatInput} onChange={(e) => { setChatInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px'; }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }} placeholder="Ask something..." className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-base leading-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" style={{ minHeight: "40px", maxHeight: "150px" }} />
+          {isProcessing ? (<button type="button" onClick={handleStopGeneration} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex-shrink-0"><Square className="h-5 w-5" /></button>) : (<button type="submit" disabled={isProcessing || !chatInput.trim()} className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"><Send className="h-5 w-5" /></button>)}
+        </form>
+        {files.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-700">{files.length} file(s) ready</span>
+              <button onClick={handleFileUpload} disabled={isUploading} className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50">{isUploading ? 'Uploading...' : 'Upload'}</button>
+            </div>
+            {files.map((file, idx) => (<div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"><span className="truncate flex-1">{file.name}</span><button onClick={() => handleRemoveFile(idx)} disabled={isUploading}><X className="h-3 w-3 text-red-500" /></button></div>))}
+          </div>
+        )}
+      </div>
+    </div>
+    <div className="w-2/3 flex flex-col bg-white">
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Brain className="h-6 w-6 text-blue-600" />
+          <h2 className="text-lg font-semibold text-gray-900">AI Response</h2>
+          {selectedQuestionIndex !== null && messages[selectedQuestionIndex] && (
+            <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full">
+              {React.createElement(getModelInfo(messages[selectedQuestionIndex].model || 'gemini').icon, { className: `h-4 w-4 ${getModelInfo(messages[selectedQuestionIndex].model || 'gemini').color}` })}
+              <span className="text-sm text-gray-700 font-medium">{getModelInfo(messages[selectedQuestionIndex].model || 'gemini').name}</span>
             </div>
           )}
         </div>
+        <div className="flex items-center space-x-2">
+          {selectedQuestionIndex !== null && (
+            <>
+              <button onClick={handleExportToPDF} disabled={isExportingPDF} className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50">{isExportingPDF ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}<span>Export</span></button>
+              <button onClick={() => handleCopyAnswer(messages[selectedQuestionIndex].a, selectedQuestionIndex)} className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">{copiedIndex === selectedQuestionIndex ? (<><Check className="h-4 w-4 text-green-600" /><span className="text-green-600">Copied!</span></>) : (<><Copy className="h-4 w-4" /><span>Copy</span></>)}</button>
+            </>
+          )}
+        </div>
       </div>
-
-      {error && (
-        <div className="fixed bottom-6 right-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center space-x-3 shadow-lg z-50 max-w-md">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <span className="text-sm font-medium">{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-      {success && (
-        <div className="fixed bottom-6 right-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center space-x-3 shadow-lg z-50 max-w-md">
-          <CheckCircle className="h-5 w-5 flex-shrink-0" />
-          <span className="text-sm font-medium">{success}</span>
-          <button onClick={() => setSuccess(null)} className="ml-auto">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      <div className="flex-1 overflow-y-auto p-8 bg-white">
+        {selectedQuestionIndex !== null ? (
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg">
+              <p className="text-[10px] font-bold text-blue-900 uppercase tracking-wide mb-2">Question</p>
+              <p className="text-base text-gray-900 leading-relaxed font-medium">{messages[selectedQuestionIndex].q}</p>
+            </div>
+            <div className="prose prose-base max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{isStreaming && selectedQuestionIndex === messages.length - 1 ? streamingText : messages[selectedQuestionIndex].a}</ReactMarkdown>
+              {isStreaming && selectedQuestionIndex === messages.length - 1 && (<span className="inline-block w-1.5 h-5 bg-blue-600 animate-pulse ml-0.5 rounded-sm align-middle"></span>)}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="text-center space-y-3">
+              <Brain className="h-16 w-16 text-gray-300 mx-auto" />
+              <p className="text-xl text-gray-400 font-medium">Select a question to view the answer</p>
+              <p className="text-sm text-gray-400">Your AI-powered responses will appear here</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  );
+    {error && (<div className="fixed bottom-6 right-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center space-x-3 shadow-lg z-50 max-w-md"><AlertCircle className="h-5 w-5 flex-shrink-0" /><span className="text-sm font-medium">{error}</span><button onClick={() => setError(null)} className="ml-auto"><X className="h-4 w-4" /></button></div>)}
+    {success && (<div className="fixed bottom-6 right-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center space-x-3 shadow-lg z-50 max-w-md"><CheckCircle className="h-5 w-5 flex-shrink-0" /><span className="text-sm font-medium">{success}</span><button onClick={() => setSuccess(null)} className="ml-auto"><X className="h-4 w-4" /></button></div>)}
+  </div>
+);
 };
 
 export default AnalysisPage;
