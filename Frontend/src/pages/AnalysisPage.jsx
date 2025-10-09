@@ -786,7 +786,6 @@
 
 
 
-
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
@@ -1114,273 +1113,6 @@ const AnalysisPage = () => {
 
   const handleBackToHistory = () => navigate("/chats");
 
-//   const handleExportToPDF = async () => {
-//     if (selectedQuestionIndex === null) {
-//       setError("Please select a question to export");
-//       return;
-//     }
-//     setIsExportingPDF(true);
-//     try {
-//       const jsPDF = (await import('jspdf')).default;
-//       const autoTable = (await import('jspdf-autotable')).default;
-      
-//       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-//       const pageWidth = doc.internal.pageSize.getWidth();
-//       const pageHeight = doc.internal.pageSize.getHeight();
-//       const margins = { left: 15, right: 15, top: 15, bottom: 15 };
-//       const contentWidth = pageWidth - margins.left - margins.right;
-//       let yPos = margins.top;
-
-//       const checkNewPage = (requiredSpace = 10) => {
-//         if (yPos > pageHeight - margins.bottom - requiredSpace) {
-//           doc.addPage();
-//           yPos = margins.top;
-//           return true;
-//         }
-//         return false;
-//       };
-
-//       // Title
-//       doc.setFontSize(20);
-//       doc.setFont('helvetica', 'bold');
-//       doc.setTextColor(37, 99, 235);
-//       doc.text('Legal Analysis Report', margins.left, yPos);
-//       yPos += 10;
-
-//       // Metadata
-//       doc.setFontSize(9);
-//       doc.setFont('helvetica', 'normal');
-//       doc.setTextColor(100, 100, 100);
-//       doc.text(`Generated: ${new Date().toLocaleString()}`, margins.left, yPos);
-//       yPos += 4;
-//       const modelInfo = getModelInfo(messages[selectedQuestionIndex].model || 'gemini');
-//       doc.text(`Model: ${modelInfo.name}`, margins.left, yPos);
-//       yPos += 8;
-
-//       // Separator
-//       doc.setDrawColor(200, 200, 200);
-//       doc.line(margins.left, yPos, pageWidth - margins.right, yPos);
-//       yPos += 8;
-
-//       // Question Section
-//       doc.setFontSize(12);
-//       doc.setFont('helvetica', 'bold');
-//       doc.setTextColor(37, 99, 235);
-//       doc.text('QUESTION', margins.left, yPos);
-//       yPos += 6;
-
-//       doc.setFontSize(10);
-//       doc.setFont('helvetica', 'normal');
-//       doc.setTextColor(0, 0, 0);
-//       const questionLines = doc.splitTextToSize(messages[selectedQuestionIndex].q, contentWidth);
-//       questionLines.forEach(line => {
-//         checkNewPage();
-//         doc.text(line, margins.left, yPos);
-//         yPos += 5;
-//       });
-//       yPos += 6;
-
-//       // Answer Section
-//       doc.setFontSize(12);
-//       doc.setFont('helvetica', 'bold');
-//       doc.setTextColor(37, 99, 235);
-//       doc.text('ANSWER', margins.left, yPos);
-//       yPos += 6;
-
-//       doc.setFontSize(10);
-//       doc.setFont('helvetica', 'normal');
-//       doc.setTextColor(0, 0, 0);
-
-//       const answerText = messages[selectedQuestionIndex].a;
-      
-//       // Clean and parse markdown
-//       const lines = answerText.split('\n');
-//       let inCodeBlock = false;
-//       let tableRows = [];
-//       let inTable = false;
-      
-//       for (let i = 0; i < lines.length; i++) {
-//         let line = lines[i];
-        
-//         // Handle code blocks
-//         if (line.trim().startsWith('```')) {
-//           inCodeBlock = !inCodeBlock;
-//           if (!inCodeBlock) yPos += 5;
-//           continue;
-//         }
-        
-//         if (inCodeBlock) {
-//           checkNewPage(8);
-//           doc.setFillColor(245, 245, 245);
-//           doc.rect(margins.left, yPos - 3, contentWidth, 6, 'F');
-//           doc.setFont('courier', 'normal');
-//           doc.setFontSize(8);
-//           doc.text(line, margins.left + 2, yPos);
-//           doc.setFont('helvetica', 'normal');
-//           doc.setFontSize(10);
-//           yPos += 5;
-//           continue;
-//         }
-
-//         // Detect and collect table data
-//         if (line.includes('|') && line.trim().startsWith('|')) {
-//           if (!inTable) {
-//             inTable = true;
-//             tableRows = [];
-//           }
-          
-//           // Skip separator lines
-//           if (line.includes('---')) continue;
-          
-//           const cells = line.split('|')
-//             .map(cell => cell.trim())
-//             .filter(cell => cell);
-          
-//           if (cells.length > 0) {
-//             tableRows.push(cells);
-//           }
-//           continue;
-//         } else if (inTable && tableRows.length > 0) {
-//           // Render collected table using autoTable
-//           checkNewPage(tableRows.length * 10 + 15);
-          
-//           const headers = tableRows[0];
-//           const body = tableRows.slice(1);
-          
-//           autoTable(doc, {
-//             head: [headers],
-//             body: body,
-//             startY: yPos,
-//             margin: { left: margins.left, right: margins.right },
-//             theme: 'grid',
-//             styles: {
-//               fontSize: 9,
-//               cellPadding: 3,
-//               lineColor: [200, 200, 200],
-//               lineWidth: 0.5
-//             },
-//             headStyles: {
-//               fillColor: [240, 240, 245],
-//               textColor: [0, 0, 0],
-//               fontStyle: 'bold',
-//               halign: 'left'
-//             },
-//             bodyStyles: {
-//               textColor: [0, 0, 0]
-//             },
-//             alternateRowStyles: {
-//               fillColor: [250, 250, 252]
-//             }
-//           });
-          
-//           yPos = doc.lastAutoTable.finalY + 8;
-//           inTable = false;
-//           tableRows = [];
-//           continue;
-//         }
-
-//         // Skip empty lines
-//         if (!line.trim()) {
-//           yPos += 3;
-//           continue;
-//         }
-
-//         // Handle headers
-//         let headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
-//         if (headerMatch) {
-//           const level = headerMatch[1].length;
-//           const text = headerMatch[2];
-//           checkNewPage(10);
-          
-//           const sizes = { 1: 14, 2: 13, 3: 12, 4: 11, 5: 10, 6: 10 };
-//           doc.setFontSize(sizes[level]);
-//           doc.setFont('helvetica', 'bold');
-//           doc.text(text, margins.left, yPos);
-//           yPos += (level === 1 ? 8 : level === 2 ? 7 : 6);
-//           doc.setFont('helvetica', 'normal');
-//           doc.setFontSize(10);
-//           continue;
-//         }
-
-//         // Handle lists
-//         const listMatch = line.match(/^(\s*)([-*•]|\d+\.)\s+(.+)$/);
-//         if (listMatch) {
-//           checkNewPage();
-//           const indent = (listMatch[1].length / 2) * 3;
-//           const bullet = listMatch[2].startsWith('•') || listMatch[2].startsWith('-') || listMatch[2].startsWith('*') ? '• ' : listMatch[2] + ' ';
-//           const content = listMatch[3];
-          
-//           // Clean bold markers
-//           const cleanContent = content.replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1');
-//           const wrappedLines = doc.splitTextToSize(bullet + cleanContent, contentWidth - indent - 3);
-          
-//           wrappedLines.forEach((wLine, idx) => {
-//             checkNewPage();
-//             doc.text(wLine, margins.left + indent + (idx === 0 ? 0 : 3), yPos);
-//             yPos += 5;
-//           });
-//           continue;
-//         }
-
-//         // Clean markdown formatting
-//         line = line.replace(/\*\*(.+?)\*\*/g, '$1'); // Remove bold
-//         line = line.replace(/__(.+?)__/g, '$1'); // Remove bold underscore
-//         line = line.replace(/\*(.+?)\*/g, '$1'); // Remove italic
-//         line = line.replace(/_(.+?)_/g, '$1'); // Remove italic underscore
-//         line = line.replace(/`(.+?)`/g, '$1'); // Remove inline code
-//         line = line.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1'); // Remove links
-//         line = line.replace(/<br\s*\/?>/gi, ''); // Remove <br> tags
-        
-//         // Regular paragraph
-//         if (line.trim()) {
-//           const wrappedLines = doc.splitTextToSize(line, contentWidth);
-//           wrappedLines.forEach(wLine => {
-//             checkNewPage();
-//             doc.text(wLine, margins.left, yPos);
-//             yPos += 5.5;
-//           });
-//           yPos += 2;
-//         }
-//       }
-
-//       // Render any remaining table
-//       if (inTable && tableRows.length > 0) {
-//         checkNewPage(tableRows.length * 10 + 15);
-//         const headers = tableRows[0];
-//         const body = tableRows.slice(1);
-        
-//         autoTable(doc, {
-//           head: [headers],
-//           body: body,
-//           startY: yPos,
-//           margin: { left: margins.left, right: margins.right },
-//           theme: 'grid',
-//           styles: {
-//             fontSize: 9,
-//             cellPadding: 3,
-//             lineColor: [200, 200, 200],
-//             lineWidth: 0.5
-//           },
-//           headStyles: {
-//             fillColor: [240, 240, 245],
-//             textColor: [0, 0, 0],
-//             fontStyle: 'bold'
-//           }
-//         });
-        
-//         yPos = doc.lastAutoTable.finalY + 8;
-//       }
-
-//       doc.save(`Legal_Analysis_${new Date().getTime()}.pdf`);
-//       setSuccess("PDF exported successfully!");
-//     } catch (err) {
-//       console.error('PDF Export Error:', err);
-//       setError("Failed to export PDF: " + err.message);
-//     } finally {
-//       setIsExportingPDF(false);
-//     }
-//   };
-     
   const handleExportToPDF = async () => {
     if (selectedQuestionIndex === null) {
       setError("Please select a question to export");
@@ -1407,52 +1139,42 @@ const AnalysisPage = () => {
         return false;
       };
 
-      // 🟦 Title
-      doc.setFontSize(20);
+      // Helper function to clean text - remove markdown and HTML tags
+      const cleanText = (text) => {
+        return text
+          .replace(/\*\*(.+?)\*\*/g, '$1')  // Remove bold **text**
+          .replace(/__(.+?)__/g, '$1')      // Remove bold __text__
+          .replace(/\*(.+?)\*/g, '$1')      // Remove italic *text*
+          .replace(/_(.+?)_/g, '$1')        // Remove italic _text_
+          .replace(/`(.+?)`/g, '$1')        // Remove inline code `text`
+          .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')  // Remove links [text](url)
+          .replace(/<br\s*\/?>/gi, ' ')     // Replace <br> with space
+          .replace(/<\/br>/gi, ' ')         // Replace </br> with space
+          .replace(/<[^>]+>/g, '')          // Remove all other HTML tags
+          .trim();
+      };
+
+      // Title
+      doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(37, 99, 235);
+      doc.setTextColor(30, 30, 30);
       doc.text('Legal Analysis Report', margins.left, yPos);
-      yPos += 10;
+      yPos += 12;
 
       // Metadata
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated: ${new Date().toLocaleString()}`, margins.left, yPos);
-      yPos += 4;
+      yPos += 5;
       const modelInfo = getModelInfo(messages[selectedQuestionIndex].model || 'gemini');
       doc.text(`Model: ${modelInfo.name}`, margins.left, yPos);
-      yPos += 8;
+      yPos += 10;
 
       // Separator
-      doc.setDrawColor(200, 200, 200);
+      doc.setDrawColor(180, 180, 180);
       doc.line(margins.left, yPos, pageWidth - margins.right, yPos);
-      yPos += 8;
-
-      // 🟩 Question Section
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(37, 99, 235);
-      doc.text('QUESTION', margins.left, yPos);
-      yPos += 6;
-
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0, 0, 0);
-      const questionLines = doc.splitTextToSize(messages[selectedQuestionIndex].q, contentWidth);
-      questionLines.forEach(line => {
-        checkNewPage();
-        doc.text(line, margins.left, yPos);
-        yPos += 5;
-      });
-      yPos += 6;
-
-      // 🟥 Answer Section
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(37, 99, 235);
-      doc.text('ANSWER', margins.left, yPos);
-      yPos += 6;
+      yPos += 10;
 
       const answerText = messages[selectedQuestionIndex].a;
       const lines = answerText.split('\n');
@@ -1463,26 +1185,27 @@ const AnalysisPage = () => {
       for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
 
+        // Handle code blocks
         if (line.trim().startsWith('```')) {
           inCodeBlock = !inCodeBlock;
-          if (!inCodeBlock) yPos += 5;
+          if (!inCodeBlock) yPos += 6;
           continue;
         }
 
         if (inCodeBlock) {
-          checkNewPage(8);
+          checkNewPage(10);
           doc.setFillColor(245, 245, 245);
-          doc.rect(margins.left, yPos - 3, contentWidth, 6, 'F');
+          doc.rect(margins.left, yPos - 4, contentWidth, 7, 'F');
           doc.setFont('courier', 'normal');
-          doc.setFontSize(8);
+          doc.setFontSize(9);
+          doc.setTextColor(50, 50, 50);
           doc.text(line, margins.left + 2, yPos);
           doc.setFont('helvetica', 'normal');
-          doc.setFontSize(10);
-          yPos += 5;
+          yPos += 6;
           continue;
         }
 
-        // Table logic
+        // Table detection and handling
         if (line.includes('|') && line.trim().startsWith('|')) {
           if (!inTable) {
             inTable = true;
@@ -1490,47 +1213,180 @@ const AnalysisPage = () => {
           }
           if (line.includes('---')) continue;
 
-          const cells = line.split('|').map(c => c.trim()).filter(Boolean);
-          if (cells.length > 0) tableRows.push(cells);
+          const cells = line.split('|')
+            .map(c => cleanText(c))  // Clean each cell
+            .filter(Boolean);
+          
+          if (cells.length > 0) {
+            tableRows.push(cells);
+          }
           continue;
         } else if (inTable && tableRows.length > 0) {
+          // Render the table
+          const estimatedHeight = tableRows.length * 15 + 25;
+          checkNewPage(estimatedHeight);
+          
           const headers = tableRows[0];
           const body = tableRows.slice(1);
+          
+          if (body.length > 0) {
+            autoTable(doc, {
+              head: [headers],
+              body: body,
+              startY: yPos,
+              margin: { left: margins.left, right: margins.right },
+              theme: 'grid',
+              styles: {
+                fontSize: 9,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.5,
+                textColor: [40, 40, 40],
+                fontStyle: 'normal',
+                overflow: 'linebreak',
+                cellWidth: 'wrap',
+                valign: 'top',
+                halign: 'left'
+              },
+              headStyles: {
+                fillColor: [240, 240, 245],
+                textColor: [30, 30, 30],
+                fontStyle: 'bold',
+                halign: 'left',
+                fontSize: 10,
+                cellPadding: 4
+              },
+              bodyStyles: {
+                textColor: [40, 40, 40],
+                fontSize: 9,
+                cellPadding: 3
+              },
+              alternateRowStyles: {
+                fillColor: [250, 250, 252]
+              },
+              columnStyles: {
+                0: { cellWidth: 'auto', minCellWidth: 35 },
+                1: { cellWidth: 'auto', minCellWidth: 100 }
+              },
+              didDrawPage: function(data) {
+                // Handle page overflow
+              }
+            });
+            
+            yPos = doc.lastAutoTable.finalY + 10;
+          }
+          
+          inTable = false;
+          tableRows = [];
+          continue;
+        }
+
+        // Skip empty lines
+        if (!line.trim()) {
+          yPos += 4;
+          continue;
+        }
+
+        // Handle headers
+        let headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headerMatch) {
+          const level = headerMatch[1].length;
+          const text = cleanText(headerMatch[2]);
+          checkNewPage(12);
+          
+          const sizes = { 1: 16, 2: 14, 3: 13, 4: 12, 5: 11, 6: 11 };
+          doc.setFontSize(sizes[level]);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 30, 30);
+          doc.text(text, margins.left, yPos);
+          yPos += (level === 1 ? 10 : level === 2 ? 9 : 8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(40, 40, 40);
+          continue;
+        }
+
+        // Handle lists (bullets and numbered)
+        const listMatch = line.match(/^(\s*)([-*•]|\d+\.)\s+(.+)$/);
+        if (listMatch) {
+          checkNewPage(8);
+          const indent = (listMatch[1].length / 2) * 4;
+          const bullet = listMatch[2].startsWith('•') || listMatch[2].startsWith('-') || listMatch[2].startsWith('*') ? '• ' : listMatch[2] + ' ';
+          const content = cleanText(listMatch[3]);
+          
+          const wrappedLines = doc.splitTextToSize(bullet + content, contentWidth - indent - 4);
+          
+          doc.setFontSize(11);
+          doc.setTextColor(40, 40, 40);
+          wrappedLines.forEach((wLine, idx) => {
+            checkNewPage(8);
+            doc.text(wLine, margins.left + indent + (idx === 0 ? 0 : 4), yPos);
+            yPos += 6;
+          });
+          continue;
+        }
+
+        // Clean and render regular paragraph
+        const cleanedLine = cleanText(line);
+        
+        if (cleanedLine.trim()) {
+          const wrappedLines = doc.splitTextToSize(cleanedLine, contentWidth);
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(40, 40, 40);
+          
+          wrappedLines.forEach(wLine => {
+            checkNewPage(8);
+            doc.text(wLine, margins.left, yPos);
+            yPos += 6.5;
+          });
+          yPos += 3;
+        }
+      }
+
+      // Render any remaining table at the end
+      if (inTable && tableRows.length > 0) {
+        const estimatedHeight = tableRows.length * 15 + 25;
+        checkNewPage(estimatedHeight);
+        
+        const headers = tableRows[0];
+        const body = tableRows.slice(1);
+        
+        if (body.length > 0) {
           autoTable(doc, {
             head: [headers],
             body: body,
             startY: yPos,
             margin: { left: margins.left, right: margins.right },
             theme: 'grid',
-            styles: { fontSize: 9, cellPadding: 3 },
+            styles: {
+              fontSize: 9,
+              cellPadding: 3,
+              lineColor: [200, 200, 200],
+              lineWidth: 0.5,
+              textColor: [40, 40, 40],
+              overflow: 'linebreak',
+              cellWidth: 'wrap',
+              valign: 'top',
+              halign: 'left'
+            },
+            headStyles: {
+              fillColor: [240, 240, 245],
+              textColor: [30, 30, 30],
+              fontStyle: 'bold',
+              fontSize: 10,
+              cellPadding: 4
+            },
+            bodyStyles: {
+              textColor: [40, 40, 40],
+              fontSize: 9,
+              cellPadding: 3
+            },
+            columnStyles: {
+              0: { cellWidth: 'auto', minCellWidth: 35 },
+              1: { cellWidth: 'auto', minCellWidth: 100 }
+            }
           });
-          yPos = doc.lastAutoTable.finalY + 8;
-          inTable = false;
-          tableRows = [];
-          continue;
         }
-
-        if (!line.trim()) {
-          yPos += 3;
-          continue;
-        }
-
-        // Clean markdown
-        line = line
-          .replace(/\*\*(.+?)\*\*/g, '$1')
-          .replace(/__(.+?)__/g, '$1')
-          .replace(/\*(.+?)\*/g, '$1')
-          .replace(/_(.+?)_/g, '$1')
-          .replace(/`(.+?)`/g, '$1')
-          .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
-
-        const wrapped = doc.splitTextToSize(line, contentWidth);
-        wrapped.forEach(wLine => {
-          checkNewPage();
-          doc.text(wLine, margins.left, yPos);
-          yPos += 5.5;
-        });
-        yPos += 2;
       }
 
       doc.save(`Legal_Analysis_${new Date().getTime()}.pdf`);
@@ -1543,40 +1399,38 @@ const AnalysisPage = () => {
     }
   };
 
-
-
-  // Claude-like markdown styling with proper font sizing
+  // Claude-like markdown styling with larger font sizes
   const markdownComponents = {
     h1: ({ node, ...props }) => <h1 className="text-[28px] font-semibold text-[#2C2D30] mt-6 mb-4 leading-[1.3] tracking-[-0.01em]" {...props} />,
-    h2: ({ node, ...props }) => <h2 className="text-[24px] font-semibold text-[#2C2D30] mt-5 mb-3 leading-[1.3] tracking-[-0.01em]" {...props} />,
-    h3: ({ node, ...props }) => <h3 className="text-[20px] font-semibold text-[#2C2D30] mt-4 mb-2.5 leading-[1.4]" {...props} />,
-    p: ({ node, ...props }) => <p className="text-[15px] text-[#2C2D30] leading-[1.7] my-3 font-normal" {...props} />,
-    ul: ({ node, ...props }) => <ul className="list-disc list-outside space-y-1.5 my-3 ml-6 text-[#2C2D30]" {...props} />,
-    ol: ({ node, ...props }) => <ol className="list-decimal list-outside space-y-1.5 my-3 ml-6 text-[#2C2D30]" {...props} />,
-    li: ({ node, ...props }) => <li className="text-[15px] text-[#2C2D30] leading-[1.65] pl-1.5" {...props} />,
+    h2: ({ node, ...props }) => <h2 className="text-[28px] font-semibold text-[#2C2D30] mt-5 mb-3 leading-[1.3] tracking-[-0.01em]" {...props} />,
+    h3: ({ node, ...props }) => <h3 className="text-[24px] font-semibold text-[#2C2D30] mt-4 mb-2.5 leading-[1.4]" {...props} />,
+    p: ({ node, ...props }) => <p className="text-[17px] text-[#2C2D30] leading-[1.7] my-3 font-normal" {...props} />,
+    ul: ({ node, ...props }) => <ul className="list-disc list-outside space-y-2 my-4 ml-6 text-[#2C2D30]" {...props} />,
+    ol: ({ node, ...props }) => <ol className="list-decimal list-outside space-y-2 my-4 ml-6 text-[#2C2D30]" {...props} />,
+    li: ({ node, ...props }) => <li className="text-[17px] text-[#2C2D30] leading-[1.65] pl-1.5" {...props} />,
     strong: ({ node, ...props }) => <strong className="font-semibold text-[#1a1a1a]" {...props} />,
     em: ({ node, ...props }) => <em className="italic text-[#2C2D30]" {...props} />,
     br: ({ node, ...props }) => <span className="block h-2" />,
     code: ({ node, inline, ...props }) => 
       inline 
-        ? <code className="bg-[#F3F3F3] text-[#C7254E] px-1.5 py-0.5 rounded text-[14px] font-mono border border-[#E5E5E5]" {...props} /> 
-        : <code className="block bg-[#2C2D30] text-[#E8E8E8] p-4 rounded-lg overflow-x-auto text-[13px] font-mono my-4 leading-[1.5] border border-[#3E3F42]" {...props} />,
+        ? <code className="bg-[#F3F3F3] text-[#C7254E] px-1.5 py-0.5 rounded text-[15px] font-mono border border-[#E5E5E5]" {...props} /> 
+        : <code className="block bg-[#2C2D30] text-[#E8E8E8] p-4 rounded-lg overflow-x-auto text-[14px] font-mono my-4 leading-[1.5] border border-[#3E3F42]" {...props} />,
     pre: ({ node, ...props }) => <pre className="my-4 rounded-lg overflow-hidden" {...props} />,
     table: ({ node, ...props }) => (
-      <div className="overflow-x-auto my-4 rounded-lg border border-[#E0E0E0] shadow-sm">
-        <table className="min-w-full divide-y divide-[#E0E0E0] bg-white text-[15px]" {...props} />
+      <div className="overflow-x-auto my-5 rounded-lg border border-[#E0E0E0] shadow-sm">
+        <table className="min-w-full divide-y divide-[#E0E0E0] bg-white text-[16px]" {...props} />
       </div>
     ),
     thead: ({ node, ...props }) => <thead className="bg-[#F8F9FA]" {...props} />,
     tbody: ({ node, ...props }) => <tbody className="divide-y divide-[#E8E8E8] bg-white" {...props} />,
     th: ({ node, ...props }) => (
-      <th className="px-4 py-3 text-left text-[13px] font-semibold text-[#2C2D30] uppercase tracking-wide border-r border-[#E0E0E0] last:border-r-0" {...props} />
+      <th className="px-5 py-4 text-left text-[14px] font-semibold text-[#2C2D30] uppercase tracking-wide border-r border-[#E0E0E0] last:border-r-0" {...props} />
     ),
     td: ({ node, ...props }) => (
-      <td className="px-4 py-3 text-[15px] text-[#2C2D30] border-r border-[#E8E8E8] last:border-r-0" {...props} />
+      <td className="px-5 py-4 text-[16px] text-[#2C2D30] border-r border-[#E8E8E8] last:border-r-0" {...props} />
     ),
     blockquote: ({ node, ...props }) => (
-      <blockquote className="border-l-4 border-[#A8A8A8] pl-4 my-4 italic text-[#5A5A5A] bg-[#F9F9F9] py-2 rounded-r" {...props} />
+      <blockquote className="border-l-4 border-[#A8A8A8] pl-4 my-4 italic text-[#5A5A5A] bg-[#F9F9F9] py-2 rounded-r text-[17px]" {...props} />
     ),
     a: ({ node, ...props }) => (
       <a className="text-[#0066CC] hover:text-[#0052A3] underline decoration-1 underline-offset-2" {...props} />
@@ -1900,7 +1754,7 @@ const AnalysisPage = () => {
             <div className="max-w-4xl mx-auto">
               <div className="mb-8 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg">
                 <p className="text-[10px] font-bold text-blue-900 uppercase tracking-wide mb-2">Question</p>
-                <p className="text-[15px] text-[#2C2D30] leading-relaxed font-medium">{messages[selectedQuestionIndex].q}</p>
+                <p className="text-[17px] text-[#2C2D30] leading-relaxed font-medium">{messages[selectedQuestionIndex].q}</p>
               </div>
               <div className="prose prose-base max-w-none">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{isStreaming && selectedQuestionIndex === messages.length - 1 ? streamingText : messages[selectedQuestionIndex].a}</ReactMarkdown>
